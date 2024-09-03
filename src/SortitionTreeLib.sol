@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {RandomNumberLib} from "./RandomNumberLib.sol";
 /// @title SortitionTreeLib
 /// @notice A library for implementing a sortition tree data structure
 /// @dev This library provides functions to manage a weighted tree for random selection
+
 library SortitionTreeLib {
     struct Tree {
         mapping(uint256 => uint256) nodes;
@@ -17,7 +19,6 @@ library SortitionTreeLib {
     error TreeCapacityReached();
     error InvalidLeafIndex();
     error TreeIsEmpty();
-    error RandomValueOutOfRange();
 
     /// @notice Initializes the tree with a given capacity
     /// @param self The Tree struct
@@ -90,24 +91,19 @@ library SortitionTreeLib {
 
     /// @notice Selects a leaf based on a random value
     /// @param self The Tree struct
-    /// @param randomValue A random value used for selection
+    /// @param seed A random value used for selection
     /// @return selectedLeaf The index of the selected leaf
-    function select(
-        Tree storage self,
-        uint256 randomValue
-    ) internal view returns (uint256 selectedLeaf) {
+    function select(Tree storage self, uint256 seed) internal view returns (uint256 selectedLeaf) {
         if (self.leafCount == 0) {
             revert TreeIsEmpty();
         }
-        if (randomValue >= getTotalWeight(self)) {
-            revert RandomValueOutOfRange();
-        }
+        uint256 value = RandomNumberLib.generate(seed, getTotalWeight(self));
 
         uint256 nodeIndex = 1;
         while (nodeIndex < self.capacity) {
             nodeIndex *= 2;
-            if (randomValue >= self.nodes[nodeIndex]) {
-                randomValue -= self.nodes[nodeIndex];
+            if (value >= self.nodes[nodeIndex]) {
+                value -= self.nodes[nodeIndex];
                 nodeIndex++;
             }
         }

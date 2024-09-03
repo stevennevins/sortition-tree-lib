@@ -215,7 +215,6 @@ contract SortitionTreeLibTest is Test {
 
     function testSelect(uint256 randomValue) public {
         testAddElementsToCapacity();
-        randomValue = bound(randomValue, 0, 250 - 1);
 
         uint256 selectedLeaf = tree.select(randomValue);
 
@@ -233,8 +232,7 @@ contract SortitionTreeLibTest is Test {
 
         for (uint256 i = 0; i < totalDraws; i++) {
             uint256 seed = uint256(keccak256(abi.encodePacked(randomValue, i)));
-            uint256 scaledRandomValue = RandomNumberLib.generate(seed, tree.getTotalWeight());
-            uint256 selectedLeaf = tree.select(scaledRandomValue);
+            uint256 selectedLeaf = tree.select(seed);
             selectionCounts[selectedLeaf - 1]++;
         }
 
