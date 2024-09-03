@@ -277,7 +277,7 @@ contract SortitionTreeLibTest is Test {
             newTree.add(25);
         }
 
-        uint256 seed = 12345;
+        uint256 seed = 12_345;
         uint256 startGas = gasleft();
         uint256[] memory selectedLeaves = newTree.selectMultiple(seed, 10);
         uint256 gasUsed = startGas - gasleft();
