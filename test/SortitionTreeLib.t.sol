@@ -9,6 +9,7 @@ contract SortitionTreeLibTest is Test {
     using SortitionTreeLib for SortitionTreeLib.Tree;
 
     SortitionTreeLib.Tree internal tree;
+    SortitionTreeLib.Tree internal newTree;
 
     function setUp() public {
         tree.initialize(10);
@@ -268,6 +269,28 @@ contract SortitionTreeLibTest is Test {
                 selectionCounts[i], expectedCount, 0.03e18, "Leaf selection count mismatch"
             );
         }
+    }
+
+    function test_Gas_Draw10_100Leaves() public {
+        // Create a new tree data structure in storage
+        newTree.initialize(1000);
+
+        // Add 100 leaves with 25 weight each
+        for (uint256 i = 0; i < 1000; i++) {
+            newTree.add(25);
+        }
+
+        // Measure gas cost for selecting 10 leaves
+        uint256 startGas = gasleft();
+        uint256 seed = 12345;
+        uint256[] memory selectedLeaves = newTree.selectMultiple(seed, 10);
+        uint256 gasUsed = startGas - gasleft();
+
+        // Assert that 10 leaves were selected
+        assertEq(selectedLeaves.length, 10, "Should have selected 10 leaves");
+
+        // Log the gas used
+        console.log("Gas used for selecting 10 leaves from 1000:", gasUsed);
     }
 
     function testPrintTreeStructure() public {
