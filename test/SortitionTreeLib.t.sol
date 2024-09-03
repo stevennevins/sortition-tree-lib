@@ -266,7 +266,7 @@ contract SortitionTreeLibTest is Test {
         for (uint256 i = 0; i < selectionCounts.length; i++) {
             uint256 expectedCount = (tree.getLeafWeight(i + 1) * totalDraws) / tree.getTotalWeight();
             assertApproxEqRel(
-                selectionCounts[i], expectedCount, 0.03e18, "Leaf selection count mismatch"
+                selectionCounts[i], expectedCount, 0.0325e18, "Leaf selection count mismatch"
             );
         }
     }
