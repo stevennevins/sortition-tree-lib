@@ -19,7 +19,7 @@ contract SortitionTreeLibTest is Test {
         tree.add(25);
     }
 
-    function testTreeShape() public {
+    function testTreeShape() public view {
         // Assert the total weight of the tree
         uint256 totalWeight = tree.getTotalWeight();
         assertEq(totalWeight, 100, "Total weight should be 100");
@@ -58,6 +58,24 @@ contract SortitionTreeLibTest is Test {
             uint256 leafWeight = tree.getLeafWeight(i);
             assertEq(leafWeight, 25, "Each leaf weight should be 25");
         }
+    }
+
+    function test_AddParticipantAndVerifyIndex() public {
+        uint256 newWeight = 30;
+        uint256 participantIndex = tree.add(newWeight);
+
+        assertEq(participantIndex, 5, "Participant index should be 5");
+
+        uint256 retrievedWeight = tree.getLeafWeight(participantIndex);
+        assertEq(retrievedWeight, newWeight, "Retrieved weight should match the added weight");
+
+        uint256 expectedTotalWeight = 100 + newWeight; // 100 from setUp() + new weight
+        uint256 actualTotalWeight = tree.getTotalWeight();
+        assertEq(actualTotalWeight, expectedTotalWeight, "Total weight should be updated correctly");
+
+        uint256 expectedLeafCount = 5; // 4 from setUp() + 1 new
+        uint256 actualLeafCount = tree.leafCount;
+        assertEq(actualLeafCount, expectedLeafCount, "Leaf count should be updated correctly");
     }
 
     function test_VerifyIntermediateNodes() public {
@@ -280,17 +298,17 @@ contract SortitionTreeLibTest is Test {
 
         uint256 seed = 12_345;
         uint256 startGas = gasleft();
-        uint256[] memory selectedLeaves = newTree.selectMultiple(seed, 10);
+        newTree.selectMultiple(seed, 10);
         uint256 gasUsed = startGas - gasleft();
 
         console.log("Gas used for selecting 10 leaves from 1000:", gasUsed);
     }
 
-    function testPrintTreeStructure() public {
+    function testPrintTreeStructure() public view {
         printTreeStructure();
     }
 
-    function printTreeStructure() internal {
+    function printTreeStructure() internal view {
         uint256 totalWeight = tree.getTotalWeight();
         uint256 leafCount = tree.leafCount;
 
