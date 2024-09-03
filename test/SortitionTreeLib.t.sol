@@ -213,7 +213,9 @@ contract SortitionTreeLibTest is Test {
         }
     }
 
-    function testSelect(uint256 randomValue) public {
+    function testSelect(
+        uint256 randomValue
+    ) public {
         testAddElementsToCapacity();
 
         uint256 selectedLeaf = tree.select(randomValue);
@@ -221,7 +223,9 @@ contract SortitionTreeLibTest is Test {
         assertTrue(selectedLeaf >= 1 && selectedLeaf <= 10);
     }
 
-    function testSelectMultiple(uint256 quantity) public {
+    function testSelectMultiple(
+        uint256 quantity
+    ) public {
         quantity = bound(quantity, 1, 100); // Use vm.bound to set a reasonable range
         testAddElementsToCapacity();
 
@@ -244,7 +248,9 @@ contract SortitionTreeLibTest is Test {
     /**
      * forge-config: default.fuzz.runs = 10
      */
-    function testSelectWithUniformRandomNumberLib(uint256 randomValue) public {
+    function testSelectWithUniformRandomNumberLib(
+        uint256 randomValue
+    ) public {
         testAddElementsToCapacity();
 
         uint256[] memory selectionCounts = new uint256[](10);

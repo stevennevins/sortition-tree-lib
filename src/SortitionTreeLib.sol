@@ -138,7 +138,9 @@ library SortitionTreeLib {
     /// @notice Gets the total weight of the tree
     /// @param self The Tree struct
     /// @return The total weight
-    function getTotalWeight(Tree storage self) internal view returns (uint256) {
+    function getTotalWeight(
+        Tree storage self
+    ) internal view returns (uint256) {
         return self.nodes[1];
     }
 
