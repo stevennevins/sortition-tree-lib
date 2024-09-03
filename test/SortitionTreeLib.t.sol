@@ -248,6 +248,7 @@ contract SortitionTreeLibTest is Test {
 
     /**
      * forge-config: default.fuzz.runs = 10
+     * forge-config: ci.fuzz.runs = 10
      */
     function testSelectWithUniformRandomNumberLib(
         uint256 randomValue
