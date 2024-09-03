@@ -19,6 +19,7 @@ library SortitionTreeLib {
     error TreeCapacityReached();
     error InvalidLeafIndex();
     error TreeIsEmpty();
+    error QuantityMustBeGreaterThanZero();
 
     /// @notice Initializes the tree with a given capacity
     /// @param self The Tree struct
@@ -109,6 +110,29 @@ library SortitionTreeLib {
         }
 
         return nodeIndex - self.capacity + 1;
+    }
+
+    /// @notice Selects multiple leaves based on a single input seed
+    /// @param self The Tree struct
+    /// @param seed A random value used for selection
+    /// @param quantity The number of leaves to select
+    /// @return selectedLeaves An array of indices of the selected leaves
+    function selectMultiple(
+        Tree storage self,
+        uint256 seed,
+        uint256 quantity
+    ) internal view returns (uint256[] memory) {
+        if (quantity == 0) {
+            revert QuantityMustBeGreaterThanZero();
+        }
+
+        uint256[] memory selectedLeaves = new uint256[](quantity);
+        for (uint256 i = 0; i < quantity; i++) {
+            uint256 newSeed = uint256(keccak256(abi.encodePacked(seed, i)));
+            selectedLeaves[i] = select(self, newSeed);
+        }
+
+        return selectedLeaves;
     }
 
     /// @notice Gets the total weight of the tree

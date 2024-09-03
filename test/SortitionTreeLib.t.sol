@@ -221,6 +221,26 @@ contract SortitionTreeLibTest is Test {
         assertTrue(selectedLeaf >= 1 && selectedLeaf <= 10);
     }
 
+    function testSelectMultiple(uint256 quantity) public {
+        quantity = bound(quantity, 1, 100); // Use vm.bound to set a reasonable range
+        testAddElementsToCapacity();
+
+        uint256 seed = 12_345;
+        uint256[] memory selectedLeaves = tree.selectMultiple(seed, quantity);
+
+        assertEq(selectedLeaves.length, quantity, "Invalid selection");
+    }
+
+    function testSelectMultipleRevertOnZeroQuantity() public {
+        testAddElementsToCapacity();
+
+        uint256 seed = 12_345;
+        uint256 quantity = 0;
+
+        vm.expectRevert(SortitionTreeLib.QuantityMustBeGreaterThanZero.selector);
+        tree.selectMultiple(seed, quantity);
+    }
+
     /**
      * forge-config: default.fuzz.runs = 10
      */
