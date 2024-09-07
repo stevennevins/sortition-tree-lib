@@ -10,6 +10,7 @@ library SortitionTreeLib {
     uint256 private constant ROOT_INDEX = 1;
 
     /// TODO: Update function pointer
+    /// TODO: Lazy propogation mechanism
     /// It should take in LeafIndex/NodeIndex.  This will give it access to the previous value to
     /// Calculate diffs against to update parents.  The updateParents flow should have an abstraction
     /// To receive arbitrary data to update the node appropriately
@@ -26,6 +27,7 @@ library SortitionTreeLib {
         ///   8   9   10  11  12  13  14  15
         ///
         /// Array indices:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        /// Leaf indices:   [E, E, E, E, E, E, E, E, 1, 2,  3,  4,  5,  6,  7,  8]
         /// Node types:     [E, R, I, I, I, I, I, I, L, L,  L,  L,  L,  L,  L,  L]
         ///
         /// Where E = Empty, R = Root, I = Internal Node, L = Leaf
@@ -73,15 +75,12 @@ library SortitionTreeLib {
         }
 
         participantIndex = tree.leafCount + 1;
-        uint256 nodeIndex = participantIndex + tree.capacity - 1;
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, participantIndex);
 
         tree.nodes[nodeIndex] = weight;
         tree.leafCount++;
 
-        while (nodeIndex > 1) {
-            nodeIndex /= 2;
-            tree.nodes[nodeIndex] += weight;
-        }
+        updateParentWeights(tree, nodeIndex, int256(weight));
 
         return participantIndex;
     }
@@ -98,21 +97,12 @@ library SortitionTreeLib {
             revert WeightMustBeGreaterThanZero();
         }
 
-        uint256 nodeIndex = leafIndex + tree.capacity - 1;
-        uint256 weightDifference = newWeight > tree.nodes[nodeIndex]
-            ? newWeight - tree.nodes[nodeIndex]
-            : tree.nodes[nodeIndex] - newWeight;
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, leafIndex);
+        uint256 oldWeight = tree.nodes[nodeIndex];
+        int256 weightDifference = int256(newWeight) - int256(oldWeight);
+        tree.nodes[nodeIndex] = newWeight;
 
-        bool isIncrease = newWeight > tree.nodes[nodeIndex];
-
-        while (nodeIndex > 0) {
-            if (isIncrease) {
-                tree.nodes[nodeIndex] += weightDifference;
-            } else {
-                tree.nodes[nodeIndex] -= weightDifference;
-            }
-            nodeIndex /= 2;
-        }
+        updateParentWeights(tree, nodeIndex, weightDifference);
     }
 
     /// @notice Selects a leaf based on a random value
@@ -128,19 +118,18 @@ library SortitionTreeLib {
         }
         uint256 value = RandomNumberLib.generate(seed, getTotalWeight(tree));
 
-        /// Start off at the root
-        uint256 nodeIndex = ROOT_INDEX;
+        uint256 nodeIndex = traverseTree(tree, value);
 
-        while (nodeIndex < tree.capacity) {
-            nodeIndex *= 2;
-            if (value >= tree.nodes[nodeIndex]) {
-                value -= tree.nodes[nodeIndex];
-                nodeIndex++;
-            }
-        }
-
-        return nodeIndex - tree.capacity + 1;
+        return nodeArrayIndexToLeafIndex(tree, nodeIndex);
     }
+
+    /// @notice Selects a subtree from tree that represents at least minimumWeight
+    /// TODO:
+    function selectSubTreeNode(
+        SortitionTree storage tree,
+        uint256 seed,
+        uint256 minimumWeight
+    ) internal view returns (uint256 parentNodeIndex) {}
 
     /// @notice Selects multiple leaves based on a single input seed
     /// @param tree The Tree struct
@@ -185,7 +174,7 @@ library SortitionTreeLib {
         if (!isValidLeafIndex(tree, leafIndex)) {
             revert InvalidLeafIndex();
         }
-        return tree.nodes[leafIndex + tree.capacity - 1];
+        return tree.nodes[leafIndexToNodeArrayIndex(tree, leafIndex)];
     }
 
     function isValidLeafIndex(
@@ -195,17 +184,51 @@ library SortitionTreeLib {
         return leafIndex > 0 && leafIndex <= tree.leafCount;
     }
 
-    function leafToNodeIndex(
+    function leafIndexToNodeArrayIndex(
         SortitionTree storage tree,
         uint256 leafIndex
     ) private view returns (uint256) {
         return leafIndex + tree.capacity - 1;
     }
 
-    function nodeToLeafIndex(
+    function nodeArrayIndexToLeafIndex(
         SortitionTree storage tree,
         uint256 nodeIndex
     ) private view returns (uint256) {
         return nodeIndex - tree.capacity + 1;
     }
+
+    function updateParentWeights(
+        SortitionTree storage tree,
+        uint256 nodeIndex,
+        int256 weightDifference
+    ) private {
+        while (nodeIndex > ROOT_INDEX) {
+            nodeIndex /= 2;
+            uint256 parentWeight = tree.nodes[nodeIndex];
+            tree.nodes[nodeIndex] = uint256(int256(parentWeight) + weightDifference);
+        }
+    }
+
+    function traverseTree(
+        SortitionTree storage tree,
+        uint256 value
+    ) private view returns (uint256) {
+        uint256 nodeIndex = ROOT_INDEX;
+        while (nodeIndex < tree.capacity) {
+            nodeIndex *= 2;
+            if (value >= tree.nodes[nodeIndex]) {
+                value -= tree.nodes[nodeIndex];
+                nodeIndex++;
+            }
+        }
+        return nodeIndex;
+    }
+
+    /// @notice Traverses a subtree from parentNodeIndex and returns the leaf indexes
+    /// TODO:
+    function getSubTreeLeaves(
+        SortitionTree storage tree,
+        uint256 parentNodeIndex
+    ) internal view returns (uint256[] memory) {}
 }
