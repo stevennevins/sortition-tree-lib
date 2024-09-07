@@ -148,6 +148,8 @@ library SortitionTreeLib {
     }
 
     /// @notice Selects a subtree from tree that represents at least minimumWeight
+    /// TODO: Assess if randomly selecting a leaf and then traversing the parent is more
+    /// efficient / readable. I think it might be more random
     function selectSubTreeParentNode(
         SortitionTree storage tree,
         uint256 seed,
