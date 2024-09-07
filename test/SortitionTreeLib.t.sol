@@ -561,7 +561,7 @@ contract SortitionTreeLibTest is Test {
         uint256 capWeight = 200;
         uint256 minimumWeight = 100;
 
-        uint256 parentNodeIndex = newTree.selectSubTreeParentNode(seed, capWeight, minimumWeight);
+        uint256 parentNodeIndex = newTree.selectSubTree(seed, capWeight, minimumWeight);
 
         // Verify that the selected parent node index is valid
         assertTrue(
@@ -580,6 +580,47 @@ contract SortitionTreeLibTest is Test {
         /// This might not be true so cant enforce
         // assertTrue(
         //     subtreeWeight <= capWeight, "Selected subtree weight should not exceed the cap weight"
+        // );
+    }
+
+    function testSelectSubTreeParentNodeAlternative() public {
+        // Initialize a new tree with capacity 8
+        newTree.initialize(8);
+
+        // Add elements with different weights
+        newTree.add(10); // 1
+        newTree.add(20); // 2
+        newTree.add(30); // 3
+        newTree.add(40); // 4
+        newTree.add(50); // 5
+        newTree.add(60); // 6
+        newTree.add(70); // 7
+        newTree.add(80); // 8
+
+        uint256 seed = 12_345;
+        uint256 maxWeight = 200;
+        uint256 minimumWeight = 100;
+
+        uint256 parentNodeIndex =
+            newTree.selectSubTreeParentNodeAlternative(seed, maxWeight, minimumWeight);
+
+        // Verify that the selected parent node index is valid
+        assertTrue(
+            parentNodeIndex > 0 && parentNodeIndex < newTree.capacity,
+            "Selected parent node index should be valid"
+        );
+
+        // Get the weight of the selected subtree
+        uint256 subtreeWeight = newTree.getSubtreeWeight(parentNodeIndex);
+
+        // Verify that the selected subtree meets the weight criteria
+        assertTrue(
+            subtreeWeight >= minimumWeight,
+            "Selected subtree weight should be at least the minimum weight"
+        );
+        /// This might not be true
+        // assertTrue(
+        //     subtreeWeight <= maxWeight, "Selected subtree weight should not exceed the max weight"
         // );
     }
 

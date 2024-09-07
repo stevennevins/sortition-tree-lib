@@ -148,9 +148,50 @@ library SortitionTreeLib {
     }
 
     /// @notice Selects a subtree from tree that represents at least minimumWeight
-    /// TODO: Assess if randomly selecting a leaf and then traversing the parent is more
-    /// efficient / readable. I think it might be more random
-    function selectSubTreeParentNode(
+    /// @dev This version randomly selects a leaf and then traverses up the tree
+    /// @param tree The Tree struct
+    /// @param seed A random value used for selection
+    /// @param maxWeight The maximum weight of the subtree
+    /// @param minimumWeight The minimum weight of the subtree
+    /// @return parentNodeIndex The index of the selected parent node
+    function selectSubTree(
+        SortitionTree storage tree,
+        uint256 seed,
+        uint256 maxWeight,
+        uint256 minimumWeight
+    ) internal view returns (uint256 parentNodeIndex) {
+        uint256 totalTreeWeight = getTotalWeight(tree);
+        if (minimumWeight > totalTreeWeight) {
+            /// TODO:
+            revert();
+        }
+
+        // Randomly select a leaf
+        uint256 selectedLeaf = select(tree, seed);
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, selectedLeaf);
+
+        // Traverse up the tree
+        while (nodeIndex > ROOT_INDEX) {
+            uint256 subtreeWeight = tree.nodes[nodeIndex];
+            if (subtreeWeight >= minimumWeight) {
+                if (subtreeWeight > maxWeight) {
+                    /// Recurse if not valid
+                    selectSubTree(
+                        tree, uint256(keccak256(abi.encodePacked(seed))), minimumWeight, maxWeight
+                    );
+                } else {
+                    return nodeIndex;
+                }
+            }
+            nodeIndex = getParentNode(nodeIndex);
+        }
+
+        revert();
+    }
+
+    /// @notice Selects a subtree from tree that represents at least minimumWeight
+    /// Old version
+    function selectSubTreeParentNodeAlternative(
         SortitionTree storage tree,
         uint256 seed,
         uint256 capWeight,
