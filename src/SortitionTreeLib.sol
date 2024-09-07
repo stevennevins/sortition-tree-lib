@@ -7,7 +7,29 @@ import {RandomNumberLib} from "./RandomNumberLib.sol";
 /// @dev This library provides functions to manage a weighted tree for random selection
 
 library SortitionTreeLib {
-    struct Tree {
+    uint256 private constant ROOT_INDEX = 1;
+
+    /// TODO: Update function pointer
+    /// It should take in LeafIndex/NodeIndex.  This will give it access to the previous value to
+    /// Calculate diffs against to update parents.  The updateParents flow should have an abstraction
+    /// To receive arbitrary data to update the node appropriately
+    struct SortitionTree {
+        /// @dev nodes represents a binary tree structure stored as an array
+        /// The first `capacity - 1` elements are internal nodes (non-leaves)
+        /// The leaves start at index `capacity` and go up to `2 * capacity - 1`
+        ///
+        /// Visual representation with 8 leaves:
+        ///
+        ///                 1
+        ///         2               3
+        ///     4       5       6       7
+        ///   8   9   10  11  12  13  14  15
+        ///
+        /// Array indices:  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        /// Node types:     [E, R, I, I, I, I, I, I, L, L,  L,  L,  L,  L,  L,  L]
+        ///
+        /// Where E = Empty, R = Root, I = Internal Node, L = Leaf
+        ///
         mapping(uint256 => uint256) nodes;
         uint256 leafCount;
         uint256 capacity;
@@ -22,103 +44,111 @@ library SortitionTreeLib {
     error QuantityMustBeGreaterThanZero();
 
     /// @notice Initializes the tree with a given capacity
-    /// @param self The Tree struct
+    /// @param tree The Tree struct
     /// @param initialCapacity The initial capacity of the tree
-    function initialize(Tree storage self, uint256 initialCapacity) internal {
+    function initialize(SortitionTree storage tree, uint256 initialCapacity) internal {
         if (initialCapacity <= 0) {
             revert InitialCapacityMustBeGreaterThanZero();
         }
-        if (self.capacity != 0) {
+        if (tree.capacity != 0) {
             revert TreeAlreadyInitialized();
         }
-        self.leafCount = 0;
-        self.capacity = initialCapacity;
+        tree.leafCount = 0;
+        tree.capacity = initialCapacity;
     }
 
     /// @notice Adds a new participant to the tree
-    /// @param self The Tree struct
+    /// @param tree The Tree struct
     /// @param weight The weight of the new participant
     /// @return participantIndex The index of the newly added participant
-    function add(Tree storage self, uint256 weight) internal returns (uint256 participantIndex) {
+    function add(
+        SortitionTree storage tree,
+        uint256 weight
+    ) internal returns (uint256 participantIndex) {
         if (weight <= 0) {
             revert WeightMustBeGreaterThanZero();
         }
-        if (self.leafCount >= self.capacity) {
+        if (tree.leafCount >= tree.capacity) {
             revert TreeCapacityReached();
         }
 
-        participantIndex = self.leafCount + 1;
-        uint256 nodeIndex = participantIndex + self.capacity - 1;
+        participantIndex = tree.leafCount + 1;
+        uint256 nodeIndex = participantIndex + tree.capacity - 1;
 
-        self.nodes[nodeIndex] = weight;
-        self.leafCount++;
+        tree.nodes[nodeIndex] = weight;
+        tree.leafCount++;
 
         while (nodeIndex > 1) {
             nodeIndex /= 2;
-            self.nodes[nodeIndex] += weight;
+            tree.nodes[nodeIndex] += weight;
         }
 
         return participantIndex;
     }
 
     /// @notice Updates the weight of a leaf
-    /// @param self The Tree struct
+    /// @param tree The Tree struct
     /// @param leafIndex The index of the leaf to update
     /// @param newWeight The new weight for the leaf
-    function update(Tree storage self, uint256 leafIndex, uint256 newWeight) internal {
-        if (leafIndex <= 0 || leafIndex > self.leafCount) {
+    function update(SortitionTree storage tree, uint256 leafIndex, uint256 newWeight) internal {
+        if (!isValidLeafIndex(tree, leafIndex)) {
             revert InvalidLeafIndex();
         }
         if (newWeight <= 0) {
             revert WeightMustBeGreaterThanZero();
         }
 
-        uint256 nodeIndex = leafIndex + self.capacity - 1;
-        uint256 weightDifference = newWeight > self.nodes[nodeIndex]
-            ? newWeight - self.nodes[nodeIndex]
-            : self.nodes[nodeIndex] - newWeight;
+        uint256 nodeIndex = leafIndex + tree.capacity - 1;
+        uint256 weightDifference = newWeight > tree.nodes[nodeIndex]
+            ? newWeight - tree.nodes[nodeIndex]
+            : tree.nodes[nodeIndex] - newWeight;
 
-        bool isIncrease = newWeight > self.nodes[nodeIndex];
+        bool isIncrease = newWeight > tree.nodes[nodeIndex];
 
         while (nodeIndex > 0) {
             if (isIncrease) {
-                self.nodes[nodeIndex] += weightDifference;
+                tree.nodes[nodeIndex] += weightDifference;
             } else {
-                self.nodes[nodeIndex] -= weightDifference;
+                tree.nodes[nodeIndex] -= weightDifference;
             }
             nodeIndex /= 2;
         }
     }
 
     /// @notice Selects a leaf based on a random value
-    /// @param self The Tree struct
+    /// @param tree The Tree struct
     /// @param seed A random value used for selection
     /// @return selectedLeaf The index of the selected leaf
-    function select(Tree storage self, uint256 seed) internal view returns (uint256 selectedLeaf) {
-        if (self.leafCount == 0) {
+    function select(
+        SortitionTree storage tree,
+        uint256 seed
+    ) internal view returns (uint256 selectedLeaf) {
+        if (tree.leafCount == 0) {
             revert TreeIsEmpty();
         }
-        uint256 value = RandomNumberLib.generate(seed, getTotalWeight(self));
+        uint256 value = RandomNumberLib.generate(seed, getTotalWeight(tree));
 
-        uint256 nodeIndex = 1;
-        while (nodeIndex < self.capacity) {
+        /// Start off at the root
+        uint256 nodeIndex = ROOT_INDEX;
+
+        while (nodeIndex < tree.capacity) {
             nodeIndex *= 2;
-            if (value >= self.nodes[nodeIndex]) {
-                value -= self.nodes[nodeIndex];
+            if (value >= tree.nodes[nodeIndex]) {
+                value -= tree.nodes[nodeIndex];
                 nodeIndex++;
             }
         }
 
-        return nodeIndex - self.capacity + 1;
+        return nodeIndex - tree.capacity + 1;
     }
 
     /// @notice Selects multiple leaves based on a single input seed
-    /// @param self The Tree struct
+    /// @param tree The Tree struct
     /// @param seed A random value used for selection
     /// @param quantity The number of leaves to select
     /// @return selectedLeaves An array of indices of the selected leaves
     function selectMultiple(
-        Tree storage self,
+        SortitionTree storage tree,
         uint256 seed,
         uint256 quantity
     ) internal view returns (uint256[] memory) {
@@ -129,29 +159,53 @@ library SortitionTreeLib {
         uint256[] memory selectedLeaves = new uint256[](quantity);
         for (uint256 i = 0; i < quantity; i++) {
             uint256 newSeed = uint256(keccak256(abi.encodePacked(seed, i)));
-            selectedLeaves[i] = select(self, newSeed);
+            selectedLeaves[i] = select(tree, newSeed);
         }
 
         return selectedLeaves;
     }
 
     /// @notice Gets the total weight of the tree
-    /// @param self The Tree struct
+    /// @param tree The Tree struct
     /// @return The total weight
     function getTotalWeight(
-        Tree storage self
+        SortitionTree storage tree
     ) internal view returns (uint256) {
-        return self.nodes[1];
+        return tree.nodes[ROOT_INDEX];
     }
 
     /// @notice Gets the weight of a specific leaf
-    /// @param self The Tree struct
+    /// @param tree The Tree struct
     /// @param leafIndex The index of the leaf
     /// @return The weight of the leaf
-    function getLeafWeight(Tree storage self, uint256 leafIndex) internal view returns (uint256) {
-        if (leafIndex <= 0 || leafIndex > self.leafCount) {
+    function getLeafWeight(
+        SortitionTree storage tree,
+        uint256 leafIndex
+    ) internal view returns (uint256) {
+        if (!isValidLeafIndex(tree, leafIndex)) {
             revert InvalidLeafIndex();
         }
-        return self.nodes[leafIndex + self.capacity - 1];
+        return tree.nodes[leafIndex + tree.capacity - 1];
+    }
+
+    function isValidLeafIndex(
+        SortitionTree storage tree,
+        uint256 leafIndex
+    ) private view returns (bool) {
+        return leafIndex > 0 && leafIndex <= tree.leafCount;
+    }
+
+    function leafToNodeIndex(
+        SortitionTree storage tree,
+        uint256 leafIndex
+    ) private view returns (uint256) {
+        return leafIndex + tree.capacity - 1;
+    }
+
+    function nodeToLeafIndex(
+        SortitionTree storage tree,
+        uint256 nodeIndex
+    ) private view returns (uint256) {
+        return nodeIndex - tree.capacity + 1;
     }
 }

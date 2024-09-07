@@ -6,10 +6,10 @@ import {SortitionTreeLib} from "../src/SortitionTreeLib.sol";
 import {RandomNumberLib} from "../src/RandomNumberLib.sol";
 
 contract SortitionTreeLibTest is Test {
-    using SortitionTreeLib for SortitionTreeLib.Tree;
+    using SortitionTreeLib for SortitionTreeLib.SortitionTree;
 
-    SortitionTreeLib.Tree internal tree;
-    SortitionTreeLib.Tree internal newTree;
+    SortitionTreeLib.SortitionTree internal tree;
+    SortitionTreeLib.SortitionTree internal newTree;
 
     function setUp() public {
         tree.initialize(10);
