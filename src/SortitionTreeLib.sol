@@ -9,7 +9,8 @@ import {RandomNumberLib} from "./RandomNumberLib.sol";
 library SortitionTreeLib {
     uint256 private constant ROOT_INDEX = 1;
 
-    /// TODO: Update function pointer
+    /// TODO: Function pointer and concept of node cache that can cache metadata about subtrees in addition to the weight
+    /// ie, stalest leaf in subtree, aggregate public key for subtree, etc
     /// TODO: Lazy propogation mechanism
     /// It should take in LeafIndex/NodeIndex.  This will give it access to the previous value to
     /// Calculate diffs against to update parents.  The updateParents flow should have an abstraction
@@ -123,14 +124,6 @@ library SortitionTreeLib {
         return nodeArrayIndexToLeafIndex(tree, nodeIndex);
     }
 
-    /// @notice Selects a subtree from tree that represents at least minimumWeight
-    /// TODO:
-    function selectSubTreeNode(
-        SortitionTree storage tree,
-        uint256 seed,
-        uint256 minimumWeight
-    ) internal view returns (uint256 parentNodeIndex) {}
-
     /// @notice Selects multiple leaves based on a single input seed
     /// @param tree The Tree struct
     /// @param seed A random value used for selection
@@ -152,6 +145,37 @@ library SortitionTreeLib {
         }
 
         return selectedLeaves;
+    }
+
+    /// @notice Selects a subtree from tree that represents at least minimumWeight
+    function selectSubTreeParentNode(
+        SortitionTree storage tree,
+        uint256 seed,
+        uint256 capWeight,
+        uint256 minimumWeight
+    ) internal view returns (uint256 parentNodeIndex) {
+        uint256 nodeIndex = ROOT_INDEX;
+        uint256 targetWeight;
+        uint256 totalTreeWeight = getTotalWeight(tree);
+        if (minimumWeight > totalTreeWeight) {
+            /// TODO: custom revert
+            revert();
+        }
+        do {
+            targetWeight = RandomNumberLib.generate(seed, totalTreeWeight);
+        } while (targetWeight < minimumWeight && targetWeight > capWeight);
+
+        while (nodeIndex < tree.capacity) {
+            nodeIndex *= 2;
+            if (targetWeight >= tree.nodes[nodeIndex]) {
+                targetWeight -= tree.nodes[nodeIndex];
+                nodeIndex++;
+            } else {
+                /// if we have passed our target weight then break and return the parent
+                break;
+            }
+        }
+        return getParentNode(nodeIndex);
     }
 
     /// @notice Gets the total weight of the tree
@@ -230,5 +254,96 @@ library SortitionTreeLib {
     function getSubTreeLeaves(
         SortitionTree storage tree,
         uint256 parentNodeIndex
-    ) internal view returns (uint256[] memory) {}
+    ) internal view returns (uint256[] memory) {
+        uint256[] memory leafNodeIndexes;
+        uint256 nodeIndex = parentNodeIndex;
+        while (nodeIndex < tree.capacity) {
+            nodeIndex *= 2;
+        }
+        return leafNodeIndexes;
+    }
+
+    function getSubtreeLeafCount(
+        SortitionTree storage tree,
+        uint256 parentNodeIndex
+    ) internal view returns (uint256) {
+        if (isLeafNode(tree, parentNodeIndex)) {
+            /// TODO: Should revert if is Leaf or is invalid index
+            return 0;
+        }
+
+        uint256 subtreeDepth = getSubtreeDepth(tree, parentNodeIndex);
+        uint256 maxLeafCount = 2 ** (subtreeDepth - 1);
+        uint256 leftmostLeafIndex = parentNodeIndex * (2 ** (subtreeDepth - 1));
+
+        uint256 actualLeafCount = 0;
+        for (uint256 i = 0; i < maxLeafCount; i++) {
+            if (leftmostLeafIndex + i >= tree.capacity + tree.leafCount) {
+                break;
+            }
+            if (isLeafNode(tree, leftmostLeafIndex + i)) {
+                actualLeafCount++;
+            }
+        }
+
+        return actualLeafCount;
+    }
+
+    function getChildNodes(
+        uint256 nodeIndex
+    ) internal pure returns (uint256 left, uint256 right) {
+        left = nodeIndex * 2;
+        right = left + 1;
+    }
+
+    function getParentNode(
+        uint256 nodeIndex
+    ) internal pure returns (uint256) {
+        return nodeIndex / 2;
+    }
+
+    function isLeafNode(
+        SortitionTree storage tree,
+        uint256 nodeIndex
+    ) internal view returns (bool) {
+        // A node is a leaf if its index is greater than or equal to the capacity
+        // and less than or equal to the capacity plus the number of leaves
+        return nodeIndex >= tree.capacity && nodeIndex < tree.capacity + tree.leafCount;
+    }
+
+    function getSubtreeDepth(
+        SortitionTree storage tree,
+        uint256 nodeIndex
+    ) internal view returns (uint256) {
+        uint256 depth;
+
+        if (nodeIndex > tree.capacity + tree.leafCount) {
+            /// TODO: Maybe Revert
+            return 0;
+        }
+        uint256 currentIndex = nodeIndex;
+
+        while (currentIndex < tree.capacity) {
+            depth++;
+            currentIndex *= 2;
+        }
+
+        return depth + 1;
+    }
+
+    function getSubtreeWeight(
+        SortitionTree storage tree,
+        uint256 nodeIndex
+    ) internal view returns (uint256) {
+        if (nodeIndex >= tree.capacity + tree.leafCount) {
+            return 0;
+        }
+
+        if (isLeafNode(tree, nodeIndex)) {
+            /// TODO: Revert if is leaf?
+            return tree.nodes[nodeIndex];
+        }
+
+        return tree.nodes[nodeIndex];
+    }
 }
