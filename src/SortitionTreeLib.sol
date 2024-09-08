@@ -96,19 +96,10 @@ library SortitionTreeLib {
         updateWeight(tree, leafIndex, newWeight);
     }
 
-    function updateWeight(
-        SortitionTree storage tree,
-        uint256 leafIndex,
-        uint256 newWeight
-    ) internal {
-        uint256 oldWeight = getLeafWeight(tree, leafIndex);
-        int256 weightDifference = int256(newWeight) - int256(oldWeight);
-        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, leafIndex);
-        tree.nodes[nodeIndex] = newWeight;
-
-        updateParentWeights(tree, nodeIndex, weightDifference);
-    }
-
+    /// @notice Removes a leaf from the tree
+    /// @dev If the leaf to remove is not the last leaf, it swaps with the last leaf before removal
+    /// @param tree The Tree struct
+    /// @param leafIndex The index of the leaf to remove
     function remove(SortitionTree storage tree, uint256 leafIndex) internal {
         require(leafIndex <= tree.leafCount, "Doesn't exist");
 
@@ -203,6 +194,12 @@ library SortitionTreeLib {
         revert InvalidSubtreeSelection();
     }
 
+    /// @notice Selects a leaf node from a specific subtree within the sortition tree
+    /// @dev Uses a random seed to traverse the subtree and select a leaf
+    /// @param tree The SortitionTree struct
+    /// @param seed A random value used for selection
+    /// @param parentNodeIndex The index of the parent node of the subtree to select from
+    /// @return The index of the selected leaf node
     function selectFromSubtree(
         SortitionTree storage tree,
         bytes32 seed,
@@ -217,6 +214,13 @@ library SortitionTreeLib {
         return nodeArrayIndexToLeafIndex(tree, nodeIndex);
     }
 
+    /// @notice Selects multiple leaf nodes from a specific subtree within the sortition tree
+    /// @dev Uses a random seed to repeatedly call selectFromSubtree for the specified quantity
+    /// @param tree The SortitionTree struct
+    /// @param seed A random value used as the base for selection
+    /// @param quantity The number of leaf nodes to select
+    /// @param parentNodeIndex The index of the parent node of the subtree to select from
+    /// @return An array of selected leaf node indices
     function selectMultipleFromSubtree(
         SortitionTree storage tree,
         bytes32 seed,
@@ -233,6 +237,12 @@ library SortitionTreeLib {
         return selectedLeaves;
     }
 
+    /// @notice Checks if a leaf node is within a specific subtree
+    /// @dev Traverses up the tree from the leaf node to see if it reaches the parent node
+    /// @param tree The SortitionTree struct
+    /// @param parentNodeIndex The index of the parent node defining the subtree
+    /// @param leafNodeIndex The index of the leaf node to check
+    /// @return bool True if the leaf node is in the subtree, false otherwise
     function isInSubtree(
         SortitionTree storage tree,
         uint256 parentNodeIndex,
@@ -270,6 +280,10 @@ library SortitionTreeLib {
         return tree.nodes[leafIndexToNodeArrayIndex(tree, leafIndex)];
     }
 
+    /// @notice Checks if a given leaf index is valid for the tree
+    /// @param tree The SortitionTree struct
+    /// @param leafIndex The index of the leaf to check
+    /// @return bool True if the leaf index is valid, false otherwise
     function isValidLeafIndex(
         SortitionTree storage tree,
         uint256 leafIndex
@@ -277,6 +291,10 @@ library SortitionTreeLib {
         return leafIndex > 0 && leafIndex <= tree.leafCount;
     }
 
+    /// @notice Converts a leaf index to its corresponding node array index
+    /// @param tree The SortitionTree struct
+    /// @param leafIndex The index of the leaf
+    /// @return The corresponding node array index
     function leafIndexToNodeArrayIndex(
         SortitionTree storage tree,
         uint256 leafIndex
@@ -284,6 +302,11 @@ library SortitionTreeLib {
         return leafIndex + tree.capacity - 1;
     }
 
+    /// @notice Converts a node array index to its corresponding leaf index
+    /// @dev This function is the inverse of leafIndexToNodeArrayIndex
+    /// @param tree The SortitionTree struct
+    /// @param nodeIndex The index of the node in the array
+    /// @return The corresponding leaf index
     function nodeArrayIndexToLeafIndex(
         SortitionTree storage tree,
         uint256 nodeIndex
@@ -291,18 +314,11 @@ library SortitionTreeLib {
         return nodeIndex - tree.capacity + 1;
     }
 
-    function updateParentWeights(
-        SortitionTree storage tree,
-        uint256 nodeIndex,
-        int256 weightDifference
-    ) internal {
-        while (nodeIndex > ROOT_INDEX) {
-            nodeIndex /= 2;
-            uint256 parentWeight = tree.nodes[nodeIndex];
-            tree.nodes[nodeIndex] = uint256(int256(parentWeight) + weightDifference);
-        }
-    }
-
+    /// @notice Traverses the tree from a given parent node to find a leaf based on a random value
+    /// @param tree The SortitionTree struct
+    /// @param value A random value used for traversal
+    /// @param parentNodeIndex The index of the parent node to start traversal from
+    /// @return The index of the selected leaf node
     function tranverseTreeFromNode(
         SortitionTree storage tree,
         uint256 value,
@@ -319,6 +335,10 @@ library SortitionTreeLib {
         return nodeIndex;
     }
 
+    /// @notice Traverses the tree from the root to find a leaf based on a random value
+    /// @param tree The SortitionTree struct
+    /// @param value A random value used for traversal
+    /// @return The index of the selected leaf node
     function traverseTree(
         SortitionTree storage tree,
         uint256 value
@@ -326,7 +346,6 @@ library SortitionTreeLib {
         return tranverseTreeFromNode(tree, value, ROOT_INDEX);
     }
 
-    /// @notice Traverses a subtree from parentNodeIndex and returns the leaf indexes
     function getSubTreeLeaves(
         SortitionTree storage tree,
         uint256 parentNodeIndex
@@ -362,19 +381,6 @@ library SortitionTreeLib {
         }
 
         return actualLeafCount;
-    }
-
-    function getChildNodes(
-        uint256 nodeIndex
-    ) internal pure returns (uint256 left, uint256 right) {
-        left = nodeIndex * 2;
-        right = left + 1;
-    }
-
-    function getParentNode(
-        uint256 nodeIndex
-    ) internal pure returns (uint256) {
-        return nodeIndex / 2;
     }
 
     function isLeafNode(
@@ -434,5 +440,43 @@ library SortitionTreeLib {
         }
 
         return tree.nodes[parentNodeIndex];
+    }
+
+    function getChildNodes(
+        uint256 nodeIndex
+    ) internal pure returns (uint256 left, uint256 right) {
+        left = nodeIndex * 2;
+        right = left + 1;
+    }
+
+    function getParentNode(
+        uint256 nodeIndex
+    ) internal pure returns (uint256) {
+        return nodeIndex / 2;
+    }
+
+    function updateWeight(
+        SortitionTree storage tree,
+        uint256 leafIndex,
+        uint256 newWeight
+    ) private {
+        uint256 oldWeight = getLeafWeight(tree, leafIndex);
+        int256 weightDifference = int256(newWeight) - int256(oldWeight);
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, leafIndex);
+        tree.nodes[nodeIndex] = newWeight;
+
+        updateParentWeights(tree, nodeIndex, weightDifference);
+    }
+
+    function updateParentWeights(
+        SortitionTree storage tree,
+        uint256 nodeIndex,
+        int256 weightDifference
+    ) private {
+        while (nodeIndex > ROOT_INDEX) {
+            nodeIndex /= 2;
+            uint256 parentWeight = tree.nodes[nodeIndex];
+            tree.nodes[nodeIndex] = uint256(int256(parentWeight) + weightDifference);
+        }
     }
 }
