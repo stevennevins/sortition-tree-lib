@@ -7,7 +7,7 @@ import {RandomNumberLib} from "./RandomNumberLib.sol";
 /// @notice A library for implementing a sortition tree data structure
 /// @dev This library provides functions to manage a weighted tree for random selection
 library SortitionTreeLib {
-    uint256 private constant ROOT_INDEX = 1;
+    uint256 internal constant ROOT_INDEX = 1;
 
     /// TODO: Function pointer and concept of node cache that can cache metadata about subtrees in addition to the weight
     /// ie, stalest leaf in subtree, aggregate public key for subtree, etc
@@ -256,21 +256,21 @@ library SortitionTreeLib {
     function isValidLeafIndex(
         SortitionTree storage tree,
         uint256 leafIndex
-    ) private view returns (bool) {
+    ) internal view returns (bool) {
         return leafIndex > 0 && leafIndex <= tree.leafCount;
     }
 
     function leafIndexToNodeArrayIndex(
         SortitionTree storage tree,
         uint256 leafIndex
-    ) private view returns (uint256) {
+    ) internal view returns (uint256) {
         return leafIndex + tree.capacity - 1;
     }
 
     function nodeArrayIndexToLeafIndex(
         SortitionTree storage tree,
         uint256 nodeIndex
-    ) private view returns (uint256) {
+    ) internal view returns (uint256) {
         return nodeIndex - tree.capacity + 1;
     }
 
@@ -278,7 +278,7 @@ library SortitionTreeLib {
         SortitionTree storage tree,
         uint256 nodeIndex,
         int256 weightDifference
-    ) private {
+    ) internal {
         while (nodeIndex > ROOT_INDEX) {
             nodeIndex /= 2;
             uint256 parentWeight = tree.nodes[nodeIndex];
@@ -305,7 +305,7 @@ library SortitionTreeLib {
     function traverseTree(
         SortitionTree storage tree,
         uint256 value
-    ) private view returns (uint256) {
+    ) internal view returns (uint256) {
         return tranverseTreeFromNode(tree, value, ROOT_INDEX);
     }
 
@@ -371,6 +371,12 @@ library SortitionTreeLib {
         return nodeIndex >= tree.capacity && nodeIndex < tree.capacity + tree.leafCount;
     }
 
+    function getTreeDepth(
+        SortitionTree storage tree
+    ) internal view returns (uint256) {
+        return getSubtreeDepth(tree, ROOT_INDEX);
+    }
+
     function getSubtreeDepth(
         SortitionTree storage tree,
         uint256 nodeIndex
@@ -389,6 +395,12 @@ library SortitionTreeLib {
         }
 
         return depth + 1;
+    }
+
+    function getLeafCount(
+        SortitionTree storage tree
+    ) internal view returns (uint256) {
+        return tree.leafCount;
     }
 
     function getSubtreeWeight(
