@@ -233,7 +233,7 @@ contract SortitionTreeLibTest is Test {
     }
 
     function testSelect(
-        uint256 randomValue
+        bytes32 randomValue
     ) public {
         testAddElementsToCapacity();
 
@@ -248,7 +248,7 @@ contract SortitionTreeLibTest is Test {
         quantity = bound(quantity, 1, 100); // Use vm.bound to set a reasonable range
         testAddElementsToCapacity();
 
-        uint256 seed = 12_345;
+        bytes32 seed = keccak256(abi.encodePacked(block.timestamp, block.prevrandao));
         uint256[] memory selectedLeaves = tree.selectMultiple(seed, quantity);
 
         assertEq(selectedLeaves.length, quantity, "Invalid selection");
@@ -257,7 +257,7 @@ contract SortitionTreeLibTest is Test {
     function testSelectMultipleRevertOnZeroQuantity() public {
         testAddElementsToCapacity();
 
-        uint256 seed = 12_345;
+        bytes32 seed = keccak256(abi.encodePacked(block.timestamp, block.prevrandao));
         uint256 quantity = 0;
 
         vm.expectRevert(SortitionTreeLib.QuantityMustBeGreaterThanZero.selector);
@@ -269,7 +269,7 @@ contract SortitionTreeLibTest is Test {
      * forge-config: ci.fuzz.runs = 10
      */
     function testSelectWithUniformRandomNumberLib(
-        uint256 randomValue
+        bytes32 randomValue
     ) public {
         testAddElementsToCapacity();
 
@@ -277,7 +277,7 @@ contract SortitionTreeLibTest is Test {
         uint256 totalDraws = 100_000;
 
         for (uint256 i = 0; i < totalDraws; i++) {
-            uint256 seed = uint256(keccak256(abi.encodePacked(randomValue, i)));
+            bytes32 seed = keccak256(abi.encodePacked(randomValue, i));
             uint256 selectedLeaf = tree.select(seed);
             selectionCounts[selectedLeaf - 1]++;
         }
@@ -296,7 +296,7 @@ contract SortitionTreeLibTest is Test {
             newTree.add(25);
         }
 
-        uint256 seed = 12_345;
+        bytes32 seed = keccak256(abi.encodePacked(block.timestamp, block.prevrandao));
         uint256 startGas = gasleft();
         newTree.selectMultiple(seed, 10);
         uint256 gasUsed = startGas - gasleft();
@@ -557,7 +557,7 @@ contract SortitionTreeLibTest is Test {
         newTree.add(70); // 7
         newTree.add(80); // 8
 
-        uint256 seed = 12_345;
+        bytes32 seed = bytes32(uint256(12_345));
         uint256 capWeight = 200;
         uint256 minimumWeight = 100;
 
@@ -637,7 +637,7 @@ contract SortitionTreeLibTest is Test {
         newTree.add(80); // 8
 
         // Test selecting from the root (entire tree)
-        uint256 seed = 12_345;
+        bytes32 seed = bytes32(uint256(12_345));
         uint256 selectedLeaf = newTree.selectFromSubtree(seed, 1);
         assertTrue(
             selectedLeaf >= 1 && selectedLeaf <= 8, "Selected leaf should be within valid range"
@@ -670,7 +670,7 @@ contract SortitionTreeLibTest is Test {
         newTree.add(70); // 7
         newTree.add(80); // 8
 
-        uint256 seed = 12_345;
+        bytes32 seed = bytes32(uint256(12_345));
         uint256 quantity = 3;
 
         // Test selecting multiple from the root (entire tree)

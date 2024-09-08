@@ -112,12 +112,12 @@ library SortitionTreeLib {
     /// @return selectedLeaf The index of the selected leaf
     function select(
         SortitionTree storage tree,
-        uint256 seed
+        bytes32 seed
     ) internal view returns (uint256 selectedLeaf) {
         if (tree.leafCount == 0) {
             revert TreeIsEmpty();
         }
-        uint256 value = RandomNumberLib.generate(seed, getTotalWeight(tree));
+        uint256 value = RandomNumberLib.generate(uint256(seed), getTotalWeight(tree));
 
         uint256 nodeIndex = traverseTree(tree, value);
 
@@ -131,7 +131,7 @@ library SortitionTreeLib {
     /// @return selectedLeaves An array of indices of the selected leaves
     function selectMultiple(
         SortitionTree storage tree,
-        uint256 seed,
+        bytes32 seed,
         uint256 quantity
     ) internal view returns (uint256[] memory) {
         if (quantity == 0) {
@@ -140,7 +140,7 @@ library SortitionTreeLib {
 
         uint256[] memory selectedLeaves = new uint256[](quantity);
         for (uint256 i = 0; i < quantity; i++) {
-            uint256 newSeed = uint256(keccak256(abi.encodePacked(seed, i)));
+            bytes32 newSeed = keccak256(abi.encodePacked(seed, i));
             selectedLeaves[i] = select(tree, newSeed);
         }
 
@@ -156,7 +156,7 @@ library SortitionTreeLib {
     /// @return parentNodeIndex The index of the selected parent node
     function selectSubTree(
         SortitionTree storage tree,
-        uint256 seed,
+        bytes32 seed,
         uint256 maxWeight,
         uint256 minimumWeight
     ) internal view returns (uint256 parentNodeIndex) {
@@ -177,9 +177,7 @@ library SortitionTreeLib {
                 if (subtreeWeight > maxWeight) {
                     /// TODO: Depth check as well
                     /// Recurse if not valid
-                    selectSubTree(
-                        tree, uint256(keccak256(abi.encodePacked(seed))), minimumWeight, maxWeight
-                    );
+                    selectSubTree(tree, keccak256(bytes.concat(seed)), minimumWeight, maxWeight);
                 } else {
                     return nodeIndex;
                 }
@@ -192,26 +190,26 @@ library SortitionTreeLib {
 
     function selectFromSubtree(
         SortitionTree storage tree,
-        uint256 seed,
+        bytes32 seed,
         uint256 parentNodeIndex
     ) internal view returns (uint256) {
         /// TODO: Revert if parentNodexIndex is a leaf
         uint256 subtreeWeight = tree.nodes[parentNodeIndex];
-        uint256 targetWeight = RandomNumberLib.generate(seed, subtreeWeight);
+        uint256 targetWeight = RandomNumberLib.generate(uint256(seed), subtreeWeight);
         uint256 nodeIndex = tranverseTreeFromNode(tree, targetWeight, parentNodeIndex);
         return nodeArrayIndexToLeafIndex(tree, nodeIndex);
     }
 
     function selectMultipleFromSubtree(
         SortitionTree storage tree,
-        uint256 seed,
+        bytes32 seed,
         uint256 quantity,
         uint256 parentNodeIndex
     ) internal view returns (uint256[] memory) {
         uint256[] memory selectedLeaves = new uint256[](quantity);
 
         for (uint256 i = 0; i < quantity; i++) {
-            uint256 newSeed = uint256(keccak256(abi.encodePacked(seed, i)));
+            bytes32 newSeed = keccak256(abi.encodePacked(seed, i));
             selectedLeaves[i] = selectFromSubtree(tree, newSeed, parentNodeIndex);
         }
 
