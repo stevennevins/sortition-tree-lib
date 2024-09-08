@@ -423,17 +423,16 @@ library SortitionTreeLib {
 
     function getSubtreeWeight(
         SortitionTree storage tree,
-        uint256 nodeIndex
+        uint256 parentNodeIndex
     ) internal view returns (uint256) {
-        if (nodeIndex >= tree.capacity + tree.leafCount) {
+        if (parentNodeIndex >= tree.capacity + tree.leafCount) {
             revert NodeIndexOutOfBounds();
         }
 
-        if (isLeafNode(tree, nodeIndex)) {
-            /// TODO: Revert if is leaf?
-            return tree.nodes[nodeIndex];
+        if (isLeafNode(tree, parentNodeIndex)) {
+            revert ParentNodeIndexIsLeaf();
         }
 
-        return tree.nodes[nodeIndex];
+        return tree.nodes[parentNodeIndex];
     }
 }
