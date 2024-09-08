@@ -175,6 +175,7 @@ library SortitionTreeLib {
             uint256 subtreeWeight = tree.nodes[nodeIndex];
             if (subtreeWeight >= minimumWeight) {
                 if (subtreeWeight > maxWeight) {
+                    /// TODO: Depth check as well
                     /// Recurse if not valid
                     selectSubTree(
                         tree, uint256(keccak256(abi.encodePacked(seed))), minimumWeight, maxWeight
@@ -197,17 +198,8 @@ library SortitionTreeLib {
         /// TODO: Revert if parentNodexIndex is a leaf
         uint256 subtreeWeight = tree.nodes[parentNodeIndex];
         uint256 targetWeight = RandomNumberLib.generate(seed, subtreeWeight);
-        uint256 nodeIndex = parentNodeIndex;
-        while (nodeIndex < tree.capacity) {
-            nodeIndex *= 2;
-            if (targetWeight >= tree.nodes[nodeIndex]) {
-                targetWeight -= tree.nodes[nodeIndex];
-                nodeIndex++;
-            }
-        }
+        uint256 nodeIndex = tranverseTreeFromNode(tree, targetWeight, parentNodeIndex);
         return nodeArrayIndexToLeafIndex(tree, nodeIndex);
-
-        revert("Invalid tree state");
     }
 
     function selectMultipleFromSubtree(
@@ -328,11 +320,12 @@ library SortitionTreeLib {
         }
     }
 
-    function traverseTree(
+    function tranverseTreeFromNode(
         SortitionTree storage tree,
-        uint256 value
-    ) private view returns (uint256) {
-        uint256 nodeIndex = ROOT_INDEX;
+        uint256 value,
+        uint256 parentNodeIndex
+    ) internal view returns (uint256) {
+        uint256 nodeIndex = parentNodeIndex;
         while (nodeIndex < tree.capacity) {
             nodeIndex *= 2;
             if (value >= tree.nodes[nodeIndex]) {
@@ -341,6 +334,13 @@ library SortitionTreeLib {
             }
         }
         return nodeIndex;
+    }
+
+    function traverseTree(
+        SortitionTree storage tree,
+        uint256 value
+    ) private view returns (uint256) {
+        return tranverseTreeFromNode(tree, value, ROOT_INDEX);
     }
 
     /// @notice Traverses a subtree from parentNodeIndex and returns the leaf indexes
