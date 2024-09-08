@@ -9,12 +9,6 @@ import {RandomNumberLib} from "./RandomNumberLib.sol";
 library SortitionTreeLib {
     uint256 internal constant ROOT_INDEX = 1;
 
-    /// TODO: Function pointer and concept of node cache that can cache metadata about subtrees in addition to the weight
-    /// ie, stalest leaf in subtree, aggregate public key for subtree, etc
-    /// TODO: Lazy propogation mechanism
-    /// It should take in LeafIndex/NodeIndex.  This will give it access to the previous value to
-    /// Calculate diffs against to update parents.  The updateParents flow should have an abstraction
-    /// To receive arbitrary data to update the node appropriately
     struct SortitionTree {
         /// @dev nodes represents a binary tree structure stored as an array
         /// The first `capacity - 1` elements are internal nodes (non-leaves)
