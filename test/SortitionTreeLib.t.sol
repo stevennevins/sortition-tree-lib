@@ -704,6 +704,44 @@ contract SortitionTreeLibTest is Test {
         }
     }
 
+    function testRemove() public {
+        // Initialize a new tree with capacity 8
+        newTree.initialize(8);
+
+        // Add elements with different weights
+        newTree.add(10); // 1
+        newTree.add(20); // 2
+        newTree.add(30); // 3
+        newTree.add(40); // 4
+        newTree.add(50); // 5
+
+        // Check initial state
+        assertEq(newTree.getLeafCount(), 5, "Initial leaf count should be 5");
+        assertEq(newTree.getTotalWeight(), 150, "Initial total weight should be 150");
+
+        // Remove a leaf from the middle (index 3)
+        newTree.remove(3);
+
+        // Check state after removal
+        assertEq(newTree.getLeafCount(), 4, "Leaf count should be 4 after removal");
+        assertEq(newTree.getTotalWeight(), 120, "Total weight should be 120 after removal");
+
+        // Check weights of remaining leaves
+        assertEq(newTree.getLeafWeight(1), 10, "Weight of leaf 1 should remain 10");
+        assertEq(newTree.getLeafWeight(2), 20, "Weight of leaf 2 should remain 20");
+        assertEq(
+            newTree.getLeafWeight(3), 50, "Weight of leaf 3 should now be 50 (previously leaf 5)"
+        );
+        assertEq(newTree.getLeafWeight(4), 40, "Weight of leaf 4 should remain 40");
+
+        // Remove the last leaf
+        newTree.remove(4);
+
+        // Check final state
+        assertEq(newTree.getLeafCount(), 3, "Final leaf count should be 3");
+        assertEq(newTree.getTotalWeight(), 80, "Final total weight should be 80");
+    }
+
     function testPrintTreeStructure() public view {
         printTreeStructure();
     }

@@ -85,19 +85,39 @@ library SortitionTreeLib {
     /// @param leafIndex The index of the leaf to update
     /// @param newWeight The new weight for the leaf
     function update(SortitionTree storage tree, uint256 leafIndex, uint256 newWeight) internal {
-        if (!isValidLeafIndex(tree, leafIndex)) {
-            revert InvalidLeafIndex();
-        }
         if (newWeight <= 0) {
             revert WeightMustBeGreaterThanZero();
         }
+        updateWeight(tree, leafIndex, newWeight);
+    }
 
+    function updateWeight(
+        SortitionTree storage tree,
+        uint256 leafIndex,
+        uint256 newWeight
+    ) internal {
+        if (!isValidLeafIndex(tree, leafIndex)) {
+            revert InvalidLeafIndex();
+        }
         uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, leafIndex);
         uint256 oldWeight = tree.nodes[nodeIndex];
         int256 weightDifference = int256(newWeight) - int256(oldWeight);
         tree.nodes[nodeIndex] = newWeight;
 
         updateParentWeights(tree, nodeIndex, weightDifference);
+    }
+
+    function remove(SortitionTree storage tree, uint256 leafIndex) internal {
+        require(leafIndex <= tree.leafCount, "Doesn't exist");
+
+        uint256 lastLeafIndex = tree.leafCount;
+        uint256 lastLeafWeight = getLeafWeight(tree, lastLeafIndex);
+
+        updateWeight(tree, lastLeafIndex, 0);
+        tree.leafCount--;
+        if (leafIndex != lastLeafIndex) {
+            updateWeight(tree, leafIndex, lastLeafWeight);
+        }
     }
 
     /// @notice Selects a leaf based on a random value
