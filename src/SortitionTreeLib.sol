@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import {RandomNumberLib} from "./RandomNumberLib.sol";
+
 /// @title SortitionTreeLib
 /// @notice A library for implementing a sortition tree data structure
 /// @dev This library provides functions to manage a weighted tree for random selection
-
 library SortitionTreeLib {
     uint256 private constant ROOT_INDEX = 1;
 
@@ -230,38 +230,6 @@ library SortitionTreeLib {
         }
 
         return nodeIndex == parentNodeIndex;
-    }
-
-    /// @notice Selects a subtree from tree that represents at least minimumWeight
-    /// Old version
-    function selectSubTreeParentNodeAlternative(
-        SortitionTree storage tree,
-        uint256 seed,
-        uint256 capWeight,
-        uint256 minimumWeight
-    ) internal view returns (uint256 parentNodeIndex) {
-        uint256 nodeIndex = ROOT_INDEX;
-        uint256 targetWeight;
-        uint256 totalTreeWeight = getTotalWeight(tree);
-        if (minimumWeight > totalTreeWeight) {
-            /// TODO: custom revert
-            revert();
-        }
-        do {
-            targetWeight = RandomNumberLib.generate(seed, totalTreeWeight);
-        } while (targetWeight < minimumWeight && targetWeight > capWeight);
-
-        while (nodeIndex < tree.capacity) {
-            nodeIndex *= 2;
-            if (targetWeight >= tree.nodes[nodeIndex]) {
-                targetWeight -= tree.nodes[nodeIndex];
-                nodeIndex++;
-            } else {
-                /// if we have passed our target weight then break and return the parent
-                break;
-            }
-        }
-        return getParentNode(nodeIndex);
     }
 
     /// @notice Gets the total weight of the tree
