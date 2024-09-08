@@ -189,6 +189,57 @@ library SortitionTreeLib {
         revert();
     }
 
+    function selectFromSubtree(
+        SortitionTree storage tree,
+        uint256 seed,
+        uint256 parentNodeIndex
+    ) internal view returns (uint256) {
+        /// TODO: Revert if parentNodexIndex is a leaf
+        uint256 subtreeWeight = tree.nodes[parentNodeIndex];
+        uint256 targetWeight = RandomNumberLib.generate(seed, subtreeWeight);
+        uint256 nodeIndex = parentNodeIndex;
+        while (nodeIndex < tree.capacity) {
+            nodeIndex *= 2;
+            if (targetWeight >= tree.nodes[nodeIndex]) {
+                targetWeight -= tree.nodes[nodeIndex];
+                nodeIndex++;
+            }
+        }
+        return nodeArrayIndexToLeafIndex(tree, nodeIndex);
+
+        revert("Invalid tree state");
+    }
+
+    function selectMultipleFromSubtree(
+        SortitionTree storage tree,
+        uint256 seed,
+        uint256 quantity,
+        uint256 parentNodeIndex
+    ) internal view returns (uint256[] memory) {
+        uint256[] memory selectedLeaves = new uint256[](quantity);
+
+        for (uint256 i = 0; i < quantity; i++) {
+            uint256 newSeed = uint256(keccak256(abi.encodePacked(seed, i)));
+            selectedLeaves[i] = selectFromSubtree(tree, newSeed, parentNodeIndex);
+        }
+
+        return selectedLeaves;
+    }
+
+    function isInSubtree(
+        SortitionTree storage tree,
+        uint256 parentNodeIndex,
+        uint256 leafNodeIndex
+    ) internal view returns (bool) {
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, leafNodeIndex);
+
+        while (nodeIndex > parentNodeIndex) {
+            nodeIndex = getParentNode(nodeIndex);
+        }
+
+        return nodeIndex == parentNodeIndex;
+    }
+
     /// @notice Selects a subtree from tree that represents at least minimumWeight
     /// Old version
     function selectSubTreeParentNodeAlternative(

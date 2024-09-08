@@ -624,6 +624,127 @@ contract SortitionTreeLibTest is Test {
         // );
     }
 
+    function testIsInSubtree() public {
+        // Initialize a new tree with capacity 8
+        newTree.initialize(8);
+
+        // Add elements with different weights
+        newTree.add(10); // 1
+        newTree.add(20); // 2
+        newTree.add(30); // 3
+        newTree.add(40); // 4
+        newTree.add(50); // 5
+        newTree.add(60); // 6
+        newTree.add(70); // 7
+        newTree.add(80); // 8
+
+        // Test cases for different parent nodes and leaf nodes
+        assertTrue(newTree.isInSubtree(1, 1), "Leaf 1 should be in subtree of root (1)");
+        assertTrue(newTree.isInSubtree(1, 8), "Leaf 8 should be in subtree of root (1)");
+
+        assertTrue(newTree.isInSubtree(2, 1), "Leaf 1 should be in subtree of node 2");
+        assertTrue(newTree.isInSubtree(2, 2), "Leaf 2 should be in subtree of node 2");
+        assertTrue(newTree.isInSubtree(2, 3), "Leaf 3 should be in subtree of node 2");
+        assertTrue(newTree.isInSubtree(2, 4), "Leaf 4 should be in subtree of node 2");
+
+        assertFalse(newTree.isInSubtree(2, 5), "Leaf 5 should not be in subtree of node 2");
+        assertFalse(newTree.isInSubtree(2, 8), "Leaf 8 should not be in subtree of node 2");
+
+        assertTrue(newTree.isInSubtree(3, 5), "Leaf 5 should be in subtree of node 3");
+        assertTrue(newTree.isInSubtree(3, 8), "Leaf 8 should be in subtree of node 3");
+
+        assertFalse(newTree.isInSubtree(3, 1), "Leaf 1 should not be in subtree of node 3");
+        assertFalse(newTree.isInSubtree(3, 4), "Leaf 4 should not be in subtree of node 3");
+
+        assertTrue(newTree.isInSubtree(4, 1), "Leaf 1 should be in subtree of node 4");
+        assertTrue(newTree.isInSubtree(4, 2), "Leaf 2 should be in subtree of node 4");
+
+        assertFalse(newTree.isInSubtree(4, 3), "Leaf 3 should not be in subtree of node 4");
+        assertFalse(newTree.isInSubtree(4, 8), "Leaf 8 should not be in subtree of node 4");
+    }
+
+    function testSelectFromSubtree() public {
+        // Initialize a new tree with capacity 8
+        newTree.initialize(8);
+
+        // Add elements with different weights
+        newTree.add(10); // 1
+        newTree.add(20); // 2
+        newTree.add(30); // 3
+        newTree.add(40); // 4
+        newTree.add(50); // 5
+        newTree.add(60); // 6
+        newTree.add(70); // 7
+        newTree.add(80); // 8
+
+        // Test selecting from the root (entire tree)
+        uint256 seed = 12_345;
+        uint256 selectedLeaf = newTree.selectFromSubtree(seed, 1);
+        assertTrue(
+            selectedLeaf >= 1 && selectedLeaf <= 8, "Selected leaf should be within valid range"
+        );
+
+        // Test selecting from a subtree (node 2, which contains leaves 1-4)
+        selectedLeaf = newTree.selectFromSubtree(seed, 2);
+        assertTrue(
+            selectedLeaf >= 1 && selectedLeaf <= 4, "Selected leaf should be within subtree range"
+        );
+
+        // Test selecting from another subtree (node 3, which contains leaves 5-8)
+        selectedLeaf = newTree.selectFromSubtree(seed, 3);
+        assertTrue(
+            selectedLeaf >= 5 && selectedLeaf <= 8, "Selected leaf should be within subtree range"
+        );
+    }
+
+    function testSelectMultipleFromSubtree() public {
+        // Initialize a new tree with capacity 8
+        newTree.initialize(8);
+
+        // Add elements with different weights
+        newTree.add(10); // 1
+        newTree.add(20); // 2
+        newTree.add(30); // 3
+        newTree.add(40); // 4
+        newTree.add(50); // 5
+        newTree.add(60); // 6
+        newTree.add(70); // 7
+        newTree.add(80); // 8
+
+        uint256 seed = 12_345;
+        uint256 quantity = 3;
+
+        // Test selecting multiple from the root (entire tree)
+        uint256[] memory selectedLeaves = newTree.selectMultipleFromSubtree(seed, quantity, 1);
+        assertEq(selectedLeaves.length, quantity, "Should select the correct number of leaves");
+        for (uint256 i = 0; i < quantity; i++) {
+            assertTrue(
+                selectedLeaves[i] >= 1 && selectedLeaves[i] <= 8,
+                "Selected leaf should be within valid range"
+            );
+        }
+
+        // Test selecting multiple from a subtree (node 2, which contains leaves 1-4)
+        selectedLeaves = newTree.selectMultipleFromSubtree(seed, quantity, 2);
+        assertEq(selectedLeaves.length, quantity, "Should select the correct number of leaves");
+        for (uint256 i = 0; i < quantity; i++) {
+            assertTrue(
+                selectedLeaves[i] >= 1 && selectedLeaves[i] <= 4,
+                "Selected leaf should be within subtree range"
+            );
+        }
+
+        // Test selecting multiple from another subtree (node 3, which contains leaves 5-8)
+        selectedLeaves = newTree.selectMultipleFromSubtree(seed, quantity, 3);
+        assertEq(selectedLeaves.length, quantity, "Should select the correct number of leaves");
+        for (uint256 i = 0; i < quantity; i++) {
+            assertTrue(
+                selectedLeaves[i] >= 5 && selectedLeaves[i] <= 8,
+                "Selected leaf should be within subtree range"
+            );
+        }
+    }
+
     function testPrintTreeStructure() public view {
         printTreeStructure();
     }
