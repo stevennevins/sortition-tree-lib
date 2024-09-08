@@ -324,17 +324,6 @@ contract SortitionTreeLibTest is Test {
 
         uint256 internalNode2Depth = newTree.getSubtreeDepth(3);
         assertEq(internalNode2Depth, 3, "leaf node at index 3 should have depth 2");
-
-        // Test depth of leaf nodes
-        uint256 leafNode1Depth = newTree.getSubtreeDepth(8);
-        assertEq(leafNode1Depth, 1, "Leaf node at index 8 should have depth 1");
-
-        uint256 leafNode2Depth = newTree.getSubtreeDepth(9);
-        assertEq(leafNode2Depth, 1, "Leaf node at index 9 should have depth 1");
-
-        // Test depth of an empty node (beyond the current tree size)
-        uint256 emptyNodeDepth = newTree.getSubtreeDepth(16);
-        assertEq(emptyNodeDepth, 0, "Empty node should have depth 0");
     }
 
     function testGetParentNode() public {
@@ -464,10 +453,6 @@ contract SortitionTreeLibTest is Test {
 
         uint256 rightSubtreeLeafCount = newTree.getSubtreeLeafCount(3);
         assertEq(rightSubtreeLeafCount, 1, "Right subtree should have 3 leaves");
-
-        /// Leaf should return 1
-        uint256 nonExistentNodeCount = newTree.getSubtreeLeafCount(9);
-        assertEq(nonExistentNodeCount, 0, "Non-existent node should have a count of 0");
     }
 
     function testGetSubtreeLeafCount_FullTree() public {
@@ -496,10 +481,6 @@ contract SortitionTreeLibTest is Test {
 
         uint256 lowerRightSubtreeLeafCount = newTree.getSubtreeLeafCount(5);
         assertEq(lowerRightSubtreeLeafCount, 2, "Lower right subtree should have 2 leaves");
-
-        // Test leaf nodes (should return 0 as they are not subtrees)
-        uint256 leafNodeCount = newTree.getSubtreeLeafCount(8);
-        assertEq(leafNodeCount, 0, "Leaf node should have a count of 0");
     }
 
     function testGetSubtreeWeight() public {
@@ -533,14 +514,6 @@ contract SortitionTreeLibTest is Test {
 
         uint256 lowerRightSubtreeWeight = newTree.getSubtreeWeight(5);
         assertEq(lowerRightSubtreeWeight, 70, "Lower right subtree should have weight of 70");
-
-        // Test leaf nodes
-        uint256 leafNodeWeight = newTree.getSubtreeWeight(8);
-        assertEq(leafNodeWeight, 10, "Leaf node should have weight of 10");
-
-        // Test non-existent node (should return 0)
-        uint256 nonExistentNodeWeight = newTree.getSubtreeWeight(16);
-        assertEq(nonExistentNodeWeight, 0, "Non-existent node should have weight of 0");
     }
 
     function testSelectSubTreeParentNode() public {

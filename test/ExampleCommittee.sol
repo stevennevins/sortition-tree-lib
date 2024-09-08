@@ -29,7 +29,7 @@ contract Committee {
         tree.add(weight);
     }
 
-    function updateParticipantWeight(uint256 participantIndex, uint256 newWeight) external {
+    function updateParticipant(uint256 participantIndex, uint256 newWeight) external {
         require(
             newWeight >= MIN_PARTICIPANT_WEIGHT && newWeight <= MAX_PARTICIPANT_WEIGHT,
             "Weight out of range"

@@ -39,6 +39,11 @@ library SortitionTreeLib {
     error InvalidLeafIndex();
     error TreeIsEmpty();
     error QuantityMustBeGreaterThanZero();
+    error MinimumWeightExceedsTotalWeight();
+    error InvalidSubtreeSelection();
+    error ParentNodeIndexIsLeaf();
+    error NodeIndexOutOfBounds();
+    error SubtreeDepthIsZero();
 
     /// @notice Initializes the tree with a given capacity
     /// @param tree The Tree struct
@@ -96,12 +101,9 @@ library SortitionTreeLib {
         uint256 leafIndex,
         uint256 newWeight
     ) internal {
-        if (!isValidLeafIndex(tree, leafIndex)) {
-            revert InvalidLeafIndex();
-        }
-        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, leafIndex);
-        uint256 oldWeight = tree.nodes[nodeIndex];
+        uint256 oldWeight = getLeafWeight(tree, leafIndex);
         int256 weightDifference = int256(newWeight) - int256(oldWeight);
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, leafIndex);
         tree.nodes[nodeIndex] = newWeight;
 
         updateParentWeights(tree, nodeIndex, weightDifference);
@@ -176,15 +178,14 @@ library SortitionTreeLib {
     ) internal view returns (uint256 parentNodeIndex) {
         uint256 totalTreeWeight = getTotalWeight(tree);
         if (minimumWeight > totalTreeWeight) {
-            /// TODO:
-            revert();
+            revert MinimumWeightExceedsTotalWeight();
         }
 
         // Randomly select a leaf
         uint256 selectedLeaf = select(tree, seed);
         uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, selectedLeaf);
 
-        // Traverse up the tree
+        // Traverse up the tree an return the subtree parent node that meets weight requirements
         while (nodeIndex > ROOT_INDEX) {
             uint256 subtreeWeight = tree.nodes[nodeIndex];
             if (subtreeWeight >= minimumWeight) {
@@ -199,7 +200,7 @@ library SortitionTreeLib {
             nodeIndex = getParentNode(nodeIndex);
         }
 
-        revert();
+        revert InvalidSubtreeSelection();
     }
 
     function selectFromSubtree(
@@ -207,7 +208,9 @@ library SortitionTreeLib {
         bytes32 seed,
         uint256 parentNodeIndex
     ) internal view returns (uint256) {
-        /// TODO: Revert if parentNodexIndex is a leaf
+        if (isLeafNode(tree, parentNodeIndex)) {
+            revert ParentNodeIndexIsLeaf();
+        }
         uint256 subtreeWeight = tree.nodes[parentNodeIndex];
         uint256 targetWeight = RandomNumberLib.generate(uint256(seed), subtreeWeight);
         uint256 nodeIndex = tranverseTreeFromNode(tree, targetWeight, parentNodeIndex);
@@ -324,7 +327,6 @@ library SortitionTreeLib {
     }
 
     /// @notice Traverses a subtree from parentNodeIndex and returns the leaf indexes
-    /// TODO:
     function getSubTreeLeaves(
         SortitionTree storage tree,
         uint256 parentNodeIndex
@@ -342,8 +344,7 @@ library SortitionTreeLib {
         uint256 parentNodeIndex
     ) internal view returns (uint256) {
         if (isLeafNode(tree, parentNodeIndex)) {
-            /// TODO: Should revert if is Leaf or is invalid index
-            return 0;
+            revert ParentNodeIndexIsLeaf();
         }
 
         uint256 subtreeDepth = getSubtreeDepth(tree, parentNodeIndex);
@@ -398,14 +399,17 @@ library SortitionTreeLib {
         uint256 depth;
 
         if (nodeIndex > tree.capacity + tree.leafCount) {
-            /// TODO: Maybe Revert
-            return 0;
+            revert NodeIndexOutOfBounds();
         }
         uint256 currentIndex = nodeIndex;
 
         while (currentIndex < tree.capacity) {
             depth++;
             currentIndex *= 2;
+        }
+
+        if (depth == 0) {
+            revert SubtreeDepthIsZero();
         }
 
         return depth + 1;
@@ -422,7 +426,7 @@ library SortitionTreeLib {
         uint256 nodeIndex
     ) internal view returns (uint256) {
         if (nodeIndex >= tree.capacity + tree.leafCount) {
-            return 0;
+            revert NodeIndexOutOfBounds();
         }
 
         if (isLeafNode(tree, nodeIndex)) {
