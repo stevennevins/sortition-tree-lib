@@ -37,6 +37,16 @@ contract Committee {
         tree.update(participantIndex, newWeight);
     }
 
+    function removeParticipant(
+        uint256 participantIndex
+    ) external {
+        require(
+            participantIndex > 0 && participantIndex <= tree.getLeafCount(),
+            "Invalid participant index"
+        );
+        tree.remove(participantIndex);
+    }
+
     function selectCommittee(
         bytes32 seed
     ) external {
