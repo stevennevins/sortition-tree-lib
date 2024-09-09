@@ -44,6 +44,7 @@ library SortitionTreeLib {
     error ParentNodeIndexIsLeaf();
     error NodeIndexOutOfBounds();
     error SubtreeDepthIsZero();
+    error LeafDoesNotExist();
 
     /// @notice Initializes the tree with a given capacity
     /// @param tree The Tree struct
@@ -75,7 +76,7 @@ library SortitionTreeLib {
         }
 
         participantIndex = tree.leafCount + 1;
-        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, participantIndex);
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(participantIndex, tree.capacity);
 
         tree.nodes[nodeIndex] = weight;
         tree.leafCount++;
@@ -101,7 +102,9 @@ library SortitionTreeLib {
     /// @param tree The Tree struct
     /// @param leafIndex The index of the leaf to remove
     function remove(SortitionTree storage tree, uint256 leafIndex) internal {
-        require(leafIndex <= tree.leafCount, "Doesn't exist");
+        if (leafIndex > tree.leafCount) {
+            revert LeafDoesNotExist();
+        }
 
         uint256 lastLeafIndex = tree.leafCount;
         uint256 lastLeafWeight = getLeafWeight(tree, lastLeafIndex);
@@ -126,9 +129,9 @@ library SortitionTreeLib {
         }
         uint256 value = RandomNumberLib.generate(uint256(seed), getTotalWeight(tree));
 
-        uint256 nodeIndex = traverseTree(tree, value);
+        uint256 nodeIndex = traverseTreeFromNode(tree, value, ROOT_INDEX);
 
-        return nodeArrayIndexToLeafIndex(tree, nodeIndex);
+        return nodeArrayIndexToLeafIndex(nodeIndex, tree.capacity);
     }
 
     /// @notice Selects multiple leaves based on a single input seed
@@ -174,7 +177,7 @@ library SortitionTreeLib {
 
         // Randomly select a leaf
         uint256 selectedLeaf = select(tree, seed);
-        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, selectedLeaf);
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(selectedLeaf, tree.capacity);
 
         // Traverse up the tree an return the subtree parent node that meets weight requirements
         while (nodeIndex > ROOT_INDEX) {
@@ -210,8 +213,8 @@ library SortitionTreeLib {
         }
         uint256 subtreeWeight = tree.nodes[parentNodeIndex];
         uint256 targetWeight = RandomNumberLib.generate(uint256(seed), subtreeWeight);
-        uint256 nodeIndex = tranverseTreeFromNode(tree, targetWeight, parentNodeIndex);
-        return nodeArrayIndexToLeafIndex(tree, nodeIndex);
+        uint256 nodeIndex = traverseTreeFromNode(tree, targetWeight, parentNodeIndex);
+        return nodeArrayIndexToLeafIndex(nodeIndex, tree.capacity);
     }
 
     /// @notice Selects multiple leaf nodes from a specific subtree within the sortition tree
@@ -248,7 +251,7 @@ library SortitionTreeLib {
         uint256 parentNodeIndex,
         uint256 leafNodeIndex
     ) internal view returns (bool) {
-        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, leafNodeIndex);
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(leafNodeIndex, tree.capacity);
 
         while (nodeIndex > parentNodeIndex) {
             nodeIndex = getParentNode(nodeIndex);
@@ -277,7 +280,7 @@ library SortitionTreeLib {
         if (!isValidLeafIndex(tree, leafIndex)) {
             revert InvalidLeafIndex();
         }
-        return tree.nodes[leafIndexToNodeArrayIndex(tree, leafIndex)];
+        return tree.nodes[leafIndexToNodeArrayIndex(leafIndex, tree.capacity)];
     }
 
     /// @notice Checks if a given leaf index is valid for the tree
@@ -291,50 +294,6 @@ library SortitionTreeLib {
         return leafIndex > 0 && leafIndex <= tree.leafCount;
     }
 
-    /// @notice Converts a leaf index to its corresponding node array index
-    /// @param tree The SortitionTree struct
-    /// @param leafIndex The index of the leaf
-    /// @return The corresponding node array index
-    function leafIndexToNodeArrayIndex(
-        SortitionTree storage tree,
-        uint256 leafIndex
-    ) internal view returns (uint256) {
-        return leafIndex + tree.capacity - 1;
-    }
-
-    /// @notice Converts a node array index to its corresponding leaf index
-    /// @dev This function is the inverse of leafIndexToNodeArrayIndex
-    /// @param tree The SortitionTree struct
-    /// @param nodeIndex The index of the node in the array
-    /// @return The corresponding leaf index
-    function nodeArrayIndexToLeafIndex(
-        SortitionTree storage tree,
-        uint256 nodeIndex
-    ) internal view returns (uint256) {
-        return nodeIndex - tree.capacity + 1;
-    }
-
-    /// @notice Traverses the tree from a given parent node to find a leaf based on a random value
-    /// @param tree The SortitionTree struct
-    /// @param value A random value used for traversal
-    /// @param parentNodeIndex The index of the parent node to start traversal from
-    /// @return The index of the selected leaf node
-    function tranverseTreeFromNode(
-        SortitionTree storage tree,
-        uint256 value,
-        uint256 parentNodeIndex
-    ) internal view returns (uint256) {
-        uint256 nodeIndex = parentNodeIndex;
-        while (nodeIndex < tree.capacity) {
-            nodeIndex *= 2;
-            if (value >= tree.nodes[nodeIndex]) {
-                value -= tree.nodes[nodeIndex];
-                nodeIndex++;
-            }
-        }
-        return nodeIndex;
-    }
-
     /// @notice Traverses the tree from the root to find a leaf based on a random value
     /// @param tree The SortitionTree struct
     /// @param value A random value used for traversal
@@ -343,7 +302,7 @@ library SortitionTreeLib {
         SortitionTree storage tree,
         uint256 value
     ) internal view returns (uint256) {
-        return tranverseTreeFromNode(tree, value, ROOT_INDEX);
+        return traverseTreeFromNode(tree, value, ROOT_INDEX);
     }
 
     function getSubTreeLeaves(
@@ -455,16 +414,46 @@ library SortitionTreeLib {
         return nodeIndex / 2;
     }
 
+    function leafIndexToNodeArrayIndex(
+        uint256 leafIndex,
+        uint256 capacity
+    ) internal pure returns (uint256) {
+        return leafIndex + capacity - 1;
+    }
+
+    function nodeArrayIndexToLeafIndex(
+        uint256 nodeIndex,
+        uint256 capacity
+    ) internal pure returns (uint256) {
+        return nodeIndex - capacity + 1;
+    }
+
+    // Simplified traversal using a single function
+    function traverseTreeFromNode(
+        SortitionTree storage tree,
+        uint256 value,
+        uint256 nodeIndex
+    ) internal view returns (uint256) {
+        while (nodeIndex < tree.capacity) {
+            (uint256 leftChild, uint256 rightChild) = getChildNodes(nodeIndex);
+            if (value < tree.nodes[leftChild]) {
+                nodeIndex = leftChild;
+            } else {
+                value -= tree.nodes[leftChild];
+                nodeIndex = rightChild;
+            }
+        }
+        return nodeIndex;
+    }
+
     function updateWeight(
         SortitionTree storage tree,
         uint256 leafIndex,
         uint256 newWeight
     ) private {
-        uint256 oldWeight = getLeafWeight(tree, leafIndex);
-        int256 weightDifference = int256(newWeight) - int256(oldWeight);
-        uint256 nodeIndex = leafIndexToNodeArrayIndex(tree, leafIndex);
+        uint256 nodeIndex = leafIndexToNodeArrayIndex(leafIndex, tree.capacity);
+        int256 weightDifference = int256(newWeight) - int256(tree.nodes[nodeIndex]);
         tree.nodes[nodeIndex] = newWeight;
-
         updateParentWeights(tree, nodeIndex, weightDifference);
     }
 

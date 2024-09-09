@@ -125,25 +125,6 @@ contract SortitionTreeHarness {
         return tree.isValidLeafIndex(leafIndex);
     }
 
-    function leafIndexToNodeArrayIndex(
-        uint256 leafIndex
-    ) external view returns (uint256) {
-        return tree.leafIndexToNodeArrayIndex(leafIndex);
-    }
-
-    function nodeArrayIndexToLeafIndex(
-        uint256 nodeIndex
-    ) external view returns (uint256) {
-        return tree.nodeArrayIndexToLeafIndex(nodeIndex);
-    }
-
-    function tranverseTreeFromNode(
-        uint256 value,
-        uint256 parentNodeIndex
-    ) external view returns (uint256) {
-        return tree.tranverseTreeFromNode(value, parentNodeIndex);
-    }
-
     function traverseTree(
         uint256 value
     ) external view returns (uint256) {
