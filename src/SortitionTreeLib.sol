@@ -428,7 +428,6 @@ library SortitionTreeLib {
         return nodeIndex - capacity + 1;
     }
 
-    // Simplified traversal using a single function
     function traverseTreeFromNode(
         SortitionTree storage tree,
         uint256 value,
