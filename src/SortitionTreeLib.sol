@@ -46,6 +46,9 @@ library SortitionTreeLib {
     error NodeIndexOutOfBounds();
     error SubtreeDepthIsZero();
     error LeafDoesNotExist();
+    error NotALeafNode();
+    error InvalidTargetNode();
+    error NodeNotInPath();
 
     /// @notice Initializes the tree with a given capacity
     /// @param tree The Tree struct
@@ -346,6 +349,42 @@ library SortitionTreeLib {
         }
 
         return filteredLeavesArray;
+    }
+
+    /// @notice Returns the path from a leaf to a node in its branch to the root
+    /// @param tree The sortition tree
+    /// @param leafIndex The index of the leaf node
+    /// @param targetNodeIndex The index of the target node in the branch
+    /// @return path An array of node indices representing the path from leaf to target node
+    function getPathFromLeafToNode(
+        SortitionTree storage tree,
+        uint256 leafIndex,
+        uint256 targetNodeIndex
+    ) internal view returns (uint256[] memory) {
+        uint256 leafNodeIndex = leafIndexToNodeArrayIndex(leafIndex, tree.capacity);
+
+        if (!isLeafNode(tree, leafNodeIndex)) {
+            revert NotALeafNode();
+        }
+
+        if (targetNodeIndex >= leafNodeIndex) {
+            revert InvalidTargetNode();
+        }
+
+        uint256 pathLength = getSubtreeDepth(tree, targetNodeIndex);
+
+        uint256[] memory path = new uint256[](pathLength);
+        uint256 currentNodeIndex = leafNodeIndex;
+
+        for (uint256 i = 0; i < pathLength; i++) {
+            path[i] = currentNodeIndex;
+            currentNodeIndex /= 2;
+        }
+        if (targetNodeIndex != currentNodeIndex) {
+            revert NodeNotInPath();
+        } else {
+            return path;
+        }
     }
 
     function isLeafNode(

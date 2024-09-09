@@ -760,6 +760,25 @@ contract SortitionTreeLibTest is Test {
         }
     }
 
+    function testGetPathFromLeafToNode() public {
+        newTree.initialize(8);
+
+        newTree.add(10); // 1
+        newTree.add(20); // 2
+        newTree.add(30); // 3
+        newTree.add(40); // 4
+        newTree.add(50); // 5
+
+        uint256[] memory path = newTree.getPathFromLeafToNode(3, 1);
+        assertEq(path.length, 3, "Path from leaf 3 to root should have 3 nodes");
+
+        path = newTree.getPathFromLeafToNode(5, 3);
+        assertEq(path.length, 2, "Path from leaf 5 to its parent should have 2 node");
+
+        path = newTree.getPathFromLeafToNode(2, 2);
+        assertEq(path.length, 2, "Path from leaf 2 to intermediate node should have 2 nodes");
+    }
+
     function testPrintTreeStructure() public view {
         printTreeStructure();
     }
