@@ -137,10 +137,6 @@ contract SortitionTreeHarness {
         return tree.nodeArrayIndexToLeafIndex(nodeIndex);
     }
 
-    function updateParentWeights(uint256 nodeIndex, int256 weightDifference) external {
-        tree.updateParentWeights(nodeIndex, weightDifference);
-    }
-
     function tranverseTreeFromNode(
         uint256 value,
         uint256 parentNodeIndex
