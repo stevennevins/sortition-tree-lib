@@ -50,12 +50,12 @@ contract Committee {
     function selectCommittee(
         bytes32 seed
     ) external {
-        committeeRoot = tree.selectSubTree(seed, MAX_COMMITTEE_WEIGHT, MIN_COMMITTEE_WEIGHT);
+        committeeRoot = tree.selectSubtree(seed, MAX_COMMITTEE_WEIGHT, MIN_COMMITTEE_WEIGHT);
     }
 
     function getCommitteeMembers() external view returns (uint256[] memory) {
         require(committeeRoot != 0, "Committee not selected");
-        return tree.getSubTreeLeaves(committeeRoot);
+        return tree.getSubtreeLeaves(committeeRoot);
     }
 
     function isCommitteeMember(

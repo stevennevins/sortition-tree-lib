@@ -516,7 +516,7 @@ contract SortitionTreeLibTest is Test {
         assertEq(lowerRightSubtreeWeight, 70, "Lower right subtree should have weight of 70");
     }
 
-    function testSelectSubTreeParentNode() public {
+    function testSelectSubtreeParentNode() public {
         // Initialize a new tree with capacity 8
         newTree.initialize(8);
 
@@ -534,7 +534,7 @@ contract SortitionTreeLibTest is Test {
         uint256 capWeight = 200;
         uint256 minimumWeight = 100;
 
-        uint256 parentNodeIndex = newTree.selectSubTree(seed, capWeight, minimumWeight);
+        uint256 parentNodeIndex = newTree.selectSubtree(seed, capWeight, minimumWeight);
 
         // Verify that the selected parent node index is valid
         assertTrue(
@@ -715,7 +715,7 @@ contract SortitionTreeLibTest is Test {
         assertEq(newTree.getTotalWeight(), 80, "Final total weight should be 80");
     }
 
-    function testGetSubTreeLeaves() public {
+    function testGetSubtreeLeaves() public {
         // Initialize a new tree with capacity 8
         newTree.initialize(8);
 
@@ -726,24 +726,24 @@ contract SortitionTreeLibTest is Test {
         newTree.add(40); // 4
         newTree.add(50); // 5
 
-        // Test getSubTreeLeaves for the root node (index 1)
-        uint256[] memory rootLeaves = newTree.getSubTreeLeaves(1);
+        // Test getSubtreeLeaves for the root node (index 1)
+        uint256[] memory rootLeaves = newTree.getSubtreeLeaves(1);
         assertEq(rootLeaves.length, 5, "Root should have 5 leaves");
         console.log("Root leaves:");
         for (uint256 i = 0; i < rootLeaves.length; i++) {
             console.log(rootLeaves[i]);
         }
 
-        // Test getSubTreeLeaves for the left subtree (index 2)
-        uint256[] memory leftSubtreeLeaves = newTree.getSubTreeLeaves(2);
+        // Test getSubtreeLeaves for the left subtree (index 2)
+        uint256[] memory leftSubtreeLeaves = newTree.getSubtreeLeaves(2);
         assertEq(leftSubtreeLeaves.length, 4, "Left subtree should have 4 leaves");
         console.log("Left subtree leaves:");
         for (uint256 i = 0; i < leftSubtreeLeaves.length; i++) {
             console.log(leftSubtreeLeaves[i]);
         }
 
-        // Test getSubTreeLeaves for the right subtree (index 3)
-        uint256[] memory rightSubtreeLeaves = newTree.getSubTreeLeaves(3);
+        // Test getSubtreeLeaves for the right subtree (index 3)
+        uint256[] memory rightSubtreeLeaves = newTree.getSubtreeLeaves(3);
         assertEq(rightSubtreeLeaves.length, 1, "Right subtree should have 1 leaf");
         assertEq(rightSubtreeLeaves[0], 50, "Right leave should be 50");
         console.log("Right subtree leaves:");
@@ -751,8 +751,8 @@ contract SortitionTreeLibTest is Test {
             console.log(rightSubtreeLeaves[i]);
         }
 
-        // Test getSubTreeLeaves for a lower level node (index 4)
-        uint256[] memory lowerLevelLeaves = newTree.getSubTreeLeaves(4);
+        // Test getSubtreeLeaves for a lower level node (index 4)
+        uint256[] memory lowerLevelLeaves = newTree.getSubtreeLeaves(4);
         assertEq(lowerLevelLeaves.length, 2, "Lower level node should have 2 leaves");
         console.log("Lower level leaves:");
         for (uint256 i = 0; i < lowerLevelLeaves.length; i++) {

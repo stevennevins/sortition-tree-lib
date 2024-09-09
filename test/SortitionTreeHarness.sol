@@ -37,12 +37,12 @@ contract SortitionTreeHarness {
         return tree.selectMultiple(seed, quantity);
     }
 
-    function selectSubTree(
+    function selectSubtree(
         bytes32 seed,
         uint256 maxWeight,
         uint256 minimumWeight
     ) external view returns (uint256) {
-        return tree.selectSubTree(seed, maxWeight, minimumWeight);
+        return tree.selectSubtree(seed, maxWeight, minimumWeight);
     }
 
     function selectFromSubtree(
@@ -77,10 +77,10 @@ contract SortitionTreeHarness {
         return tree.getLeafWeight(leafIndex);
     }
 
-    function getSubTreeLeaves(
+    function getSubtreeLeaves(
         uint256 parentNodeIndex
     ) external view returns (uint256[] memory) {
-        return tree.getSubTreeLeaves(parentNodeIndex);
+        return tree.getSubtreeLeaves(parentNodeIndex);
     }
 
     function getSubtreeLeafCount(
@@ -125,7 +125,7 @@ contract SortitionTreeHarness {
         return tree.isValidLeafIndex(leafIndex);
     }
 
-    function traverseTree(
+    function traverseSubtree(
         uint256 value
     ) external view returns (uint256) {
         return tree.traverseTree(value);

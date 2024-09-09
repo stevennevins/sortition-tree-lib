@@ -165,7 +165,7 @@ library SortitionTreeLib {
     /// @param maxWeight The maximum weight of the subtree
     /// @param minimumWeight The minimum weight of the subtree
     /// @return parentNodeIndex The index of the selected parent node
-    function selectSubTree(
+    function selectSubtree(
         SortitionTree storage tree,
         bytes32 seed,
         uint256 maxWeight,
@@ -187,7 +187,7 @@ library SortitionTreeLib {
                 if (subtreeWeight > maxWeight) {
                     /// TODO: Depth check as well
                     /// Recurse if not valid
-                    selectSubTree(tree, keccak256(bytes.concat(seed)), minimumWeight, maxWeight);
+                    selectSubtree(tree, keccak256(bytes.concat(seed)), minimumWeight, maxWeight);
                 } else {
                     return nodeIndex;
                 }
@@ -310,10 +310,10 @@ library SortitionTreeLib {
         SortitionTree storage tree,
         uint256 parentNodeIndex
     ) internal view returns (uint256) {
-        return getSubTreeLeaves(tree, parentNodeIndex).length;
+        return getSubtreeLeaves(tree, parentNodeIndex).length;
     }
 
-    function getSubTreeLeaves(
+    function getSubtreeLeaves(
         SortitionTree storage tree,
         uint256 parentNodeIndex
     ) internal view returns (uint256[] memory) {
