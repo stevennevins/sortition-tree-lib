@@ -316,14 +316,14 @@ contract SortitionTreeLibTest is Test {
 
         // Test depth of root node (index 1)
         uint256 rootDepth = newTree.getSubtreeDepth(1);
-        assertEq(rootDepth, 4, "Root node should have depth 4");
+        assertEq(rootDepth, 3, "Root node should have depth 3");
 
         // Test depth of internal nodes
         uint256 internalNode1Depth = newTree.getSubtreeDepth(2);
-        assertEq(internalNode1Depth, 3, "Internal node at index 2 should have depth 3");
+        assertEq(internalNode1Depth, 2, "Internal node at index 2 should have depth 2");
 
         uint256 internalNode2Depth = newTree.getSubtreeDepth(3);
-        assertEq(internalNode2Depth, 3, "leaf node at index 3 should have depth 2");
+        assertEq(internalNode2Depth, 2, "leaf node at index 3 should have depth 2");
     }
 
     function testGetParentNode() public {
@@ -713,6 +713,51 @@ contract SortitionTreeLibTest is Test {
         // Check final state
         assertEq(newTree.getLeafCount(), 3, "Final leaf count should be 3");
         assertEq(newTree.getTotalWeight(), 80, "Final total weight should be 80");
+    }
+
+    function testGetSubTreeLeaves() public {
+        // Initialize a new tree with capacity 8
+        newTree.initialize(8);
+
+        // Add elements with different weights
+        newTree.add(10); // 1
+        newTree.add(20); // 2
+        newTree.add(30); // 3
+        newTree.add(40); // 4
+        newTree.add(50); // 5
+
+        // Test getSubTreeLeaves for the root node (index 1)
+        uint256[] memory rootLeaves = newTree.getSubTreeLeaves(1);
+        assertEq(rootLeaves.length, 5, "Root should have 5 leaves");
+        console.log("Root leaves:");
+        for (uint256 i = 0; i < rootLeaves.length; i++) {
+            console.log(rootLeaves[i]);
+        }
+
+        // Test getSubTreeLeaves for the left subtree (index 2)
+        uint256[] memory leftSubtreeLeaves = newTree.getSubTreeLeaves(2);
+        assertEq(leftSubtreeLeaves.length, 4, "Left subtree should have 4 leaves");
+        console.log("Left subtree leaves:");
+        for (uint256 i = 0; i < leftSubtreeLeaves.length; i++) {
+            console.log(leftSubtreeLeaves[i]);
+        }
+
+        // Test getSubTreeLeaves for the right subtree (index 3)
+        uint256[] memory rightSubtreeLeaves = newTree.getSubTreeLeaves(3);
+        assertEq(rightSubtreeLeaves.length, 1, "Right subtree should have 1 leaf");
+        assertEq(rightSubtreeLeaves[0], 50, "Right leave should be 50");
+        console.log("Right subtree leaves:");
+        for (uint256 i = 0; i < rightSubtreeLeaves.length; i++) {
+            console.log(rightSubtreeLeaves[i]);
+        }
+
+        // Test getSubTreeLeaves for a lower level node (index 4)
+        uint256[] memory lowerLevelLeaves = newTree.getSubTreeLeaves(4);
+        assertEq(lowerLevelLeaves.length, 2, "Lower level node should have 2 leaves");
+        console.log("Lower level leaves:");
+        for (uint256 i = 0; i < lowerLevelLeaves.length; i++) {
+            console.log(lowerLevelLeaves[i]);
+        }
     }
 
     function testPrintTreeStructure() public view {

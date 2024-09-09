@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {RandomNumberLib} from "./RandomNumberLib.sol";
+import {console} from "forge-std/Test.sol";
 
 /// @title SortitionTreeLib
 /// @notice A library for implementing a sortition tree data structure
@@ -305,41 +306,46 @@ library SortitionTreeLib {
         return traverseTreeFromNode(tree, value, ROOT_INDEX);
     }
 
-    function getSubTreeLeaves(
-        SortitionTree storage tree,
-        uint256 parentNodeIndex
-    ) internal view returns (uint256[] memory) {
-        uint256[] memory leafNodeIndexes;
-        uint256 nodeIndex = parentNodeIndex;
-        while (nodeIndex < tree.capacity) {
-            nodeIndex *= 2;
-        }
-        return leafNodeIndexes;
-    }
-
     function getSubtreeLeafCount(
         SortitionTree storage tree,
         uint256 parentNodeIndex
     ) internal view returns (uint256) {
+        return getSubTreeLeaves(tree, parentNodeIndex).length;
+    }
+
+    function getSubTreeLeaves(
+        SortitionTree storage tree,
+        uint256 parentNodeIndex
+    ) internal view returns (uint256[] memory) {
         if (isLeafNode(tree, parentNodeIndex)) {
             revert ParentNodeIndexIsLeaf();
         }
 
         uint256 subtreeDepth = getSubtreeDepth(tree, parentNodeIndex);
-        uint256 maxLeafCount = 2 ** (subtreeDepth - 1);
-        uint256 leftmostLeafIndex = parentNodeIndex * (2 ** (subtreeDepth - 1));
+        uint256 maxLeafCount = 2 ** subtreeDepth;
+        uint256 leftmostLeafIndex = parentNodeIndex * 2 ** subtreeDepth;
 
-        uint256 actualLeafCount = 0;
+        uint256[] memory leaves = new uint256[](maxLeafCount);
+        uint256 actualLeafCount;
+        uint256 leafNodeIndex;
         for (uint256 i = 0; i < maxLeafCount; i++) {
-            if (leftmostLeafIndex + i >= tree.capacity + tree.leafCount) {
+            leafNodeIndex = leftmostLeafIndex + i;
+            console.log(leafNodeIndex);
+            if (leafNodeIndex >= tree.capacity + tree.leafCount) {
                 break;
             }
-            if (isLeafNode(tree, leftmostLeafIndex + i)) {
+            if (isLeafNode(tree, leafNodeIndex)) {
+                uint256 leafIndex = nodeArrayIndexToLeafIndex(leafNodeIndex, tree.capacity);
+                leaves[actualLeafCount] = getLeafWeight(tree, leafIndex);
                 actualLeafCount++;
             }
         }
+        uint256[] memory filteredLeavesArray = new uint256[](actualLeafCount);
+        for (uint256 i; i < actualLeafCount; i++) {
+            filteredLeavesArray[i] = leaves[i];
+        }
 
-        return actualLeafCount;
+        return filteredLeavesArray;
     }
 
     function isLeafNode(
@@ -377,7 +383,7 @@ library SortitionTreeLib {
             revert SubtreeDepthIsZero();
         }
 
-        return depth + 1;
+        return depth;
     }
 
     function getLeafCount(
