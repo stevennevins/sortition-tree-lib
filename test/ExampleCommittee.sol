@@ -32,9 +32,10 @@ contract Committee {
         uint256 leafNodeIndex =
             SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndex, INITIAL_CAPACITY);
         participantSigningKeyTree[leafNodeIndex] = bytes32(uint256(uint160(signingKey)));
+        /// TODO: Handle if they're already added
         participantLeafIndices[msg.sender] = leafIndex;
 
-        updateTreeHashes(leafIndex);
+        updateAggregateKeyHashes(leafIndex);
     }
 
     function updateParticipant(uint256 participantIndex, uint256 newWeight) external {
@@ -60,7 +61,7 @@ contract Committee {
             SortitionTreeLib.leafIndexToNodeArrayIndex(participantIndex, INITIAL_CAPACITY);
         participantSigningKeyTree[leafNodeIndex] = bytes32(uint256(uint160(newSigningKey)));
 
-        updateTreeHashes(participantIndex);
+        updateAggregateKeyHashes(participantIndex);
     }
 
     function removeParticipant(
@@ -77,10 +78,10 @@ contract Committee {
         delete participantSigningKeyTree[participantNodeIndex];
         delete participantLeafIndices[msg.sender];
 
-        updateTreeHashes(participantIndex);
+        updateAggregateKeyHashes(participantIndex);
     }
 
-    function updateTreeHashes(
+    function updateAggregateKeyHashes(
         uint256 leafIndex
     ) internal {
         uint256 nodeIndex = SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndex, INITIAL_CAPACITY);
@@ -130,7 +131,7 @@ contract Committee {
 
     function getCommitteeMembers() external view returns (uint256[] memory) {
         require(committeeRoot != 0, "Committee not selected");
-        return tree.getSubtreeLeaves(committeeRoot);
+        return tree.getSubtreeLeafIndexes(committeeRoot);
     }
 
     function isCommitteeMember(

@@ -77,10 +77,10 @@ contract SortitionTreeHarness {
         return tree.getLeafWeight(leafIndex);
     }
 
-    function getSubtreeLeaves(
+    function getSubtreeLeafIndexes(
         uint256 parentNodeIndex
     ) external view returns (uint256[] memory) {
-        return tree.getSubtreeLeaves(parentNodeIndex);
+        return tree.getSubtreeLeafIndexes(parentNodeIndex);
     }
 
     function getSubtreeLeafCount(

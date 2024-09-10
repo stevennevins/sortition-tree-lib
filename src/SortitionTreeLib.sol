@@ -313,10 +313,10 @@ library SortitionTreeLib {
         SortitionTree storage tree,
         uint256 parentNodeIndex
     ) internal view returns (uint256) {
-        return getSubtreeLeaves(tree, parentNodeIndex).length;
+        return getSubtreeLeafIndexes(tree, parentNodeIndex).length;
     }
 
-    function getSubtreeLeaves(
+    function getSubtreeLeafWeights(
         SortitionTree storage tree,
         uint256 parentNodeIndex
     ) internal view returns (uint256[] memory) {
@@ -333,13 +333,46 @@ library SortitionTreeLib {
         uint256 leafNodeIndex;
         for (uint256 i = 0; i < maxLeafCount; i++) {
             leafNodeIndex = leftmostLeafIndex + i;
-            console.log(leafNodeIndex);
             if (leafNodeIndex >= tree.capacity + tree.leafCount) {
                 break;
             }
             if (isLeafNode(tree, leafNodeIndex)) {
                 uint256 leafIndex = nodeArrayIndexToLeafIndex(leafNodeIndex, tree.capacity);
                 leaves[actualLeafCount] = getLeafWeight(tree, leafIndex);
+                actualLeafCount++;
+            }
+        }
+        uint256[] memory filteredLeavesArray = new uint256[](actualLeafCount);
+        for (uint256 i; i < actualLeafCount; i++) {
+            filteredLeavesArray[i] = leaves[i];
+        }
+
+        return filteredLeavesArray;
+    }
+
+    function getSubtreeLeafIndexes(
+        SortitionTree storage tree,
+        uint256 parentNodeIndex
+    ) internal view returns (uint256[] memory) {
+        if (isLeafNode(tree, parentNodeIndex)) {
+            revert ParentNodeIndexIsLeaf();
+        }
+
+        uint256 subtreeDepth = getSubtreeDepth(tree, parentNodeIndex);
+        uint256 maxLeafCount = 2 ** subtreeDepth;
+        uint256 leftmostLeafIndex = parentNodeIndex * 2 ** subtreeDepth;
+
+        uint256[] memory leaves = new uint256[](maxLeafCount);
+        uint256 actualLeafCount;
+        uint256 leafNodeIndex;
+        for (uint256 i = 0; i < maxLeafCount; i++) {
+            leafNodeIndex = leftmostLeafIndex + i;
+            if (leafNodeIndex >= tree.capacity + tree.leafCount) {
+                break;
+            }
+            if (isLeafNode(tree, leafNodeIndex)) {
+                uint256 leafIndex = nodeArrayIndexToLeafIndex(leafNodeIndex, tree.capacity);
+                leaves[actualLeafCount] = leafIndex;
                 actualLeafCount++;
             }
         }

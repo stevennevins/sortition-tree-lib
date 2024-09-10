@@ -726,24 +726,24 @@ contract SortitionTreeLibTest is Test {
         newTree.add(40); // 4
         newTree.add(50); // 5
 
-        // Test getSubtreeLeaves for the root node (index 1)
-        uint256[] memory rootLeaves = newTree.getSubtreeLeaves(1);
+        // Test getSubtreeLeafWeights for the root node (index 1)
+        uint256[] memory rootLeaves = newTree.getSubtreeLeafWeights(1);
         assertEq(rootLeaves.length, 5, "Root should have 5 leaves");
         console.log("Root leaves:");
         for (uint256 i = 0; i < rootLeaves.length; i++) {
             console.log(rootLeaves[i]);
         }
 
-        // Test getSubtreeLeaves for the left subtree (index 2)
-        uint256[] memory leftSubtreeLeaves = newTree.getSubtreeLeaves(2);
+        // Test getSubtreeLeafWeights for the left subtree (index 2)
+        uint256[] memory leftSubtreeLeaves = newTree.getSubtreeLeafWeights(2);
         assertEq(leftSubtreeLeaves.length, 4, "Left subtree should have 4 leaves");
         console.log("Left subtree leaves:");
         for (uint256 i = 0; i < leftSubtreeLeaves.length; i++) {
             console.log(leftSubtreeLeaves[i]);
         }
 
-        // Test getSubtreeLeaves for the right subtree (index 3)
-        uint256[] memory rightSubtreeLeaves = newTree.getSubtreeLeaves(3);
+        // Test getSubtreeLeafWeights for the right subtree (index 3)
+        uint256[] memory rightSubtreeLeaves = newTree.getSubtreeLeafWeights(3);
         assertEq(rightSubtreeLeaves.length, 1, "Right subtree should have 1 leaf");
         assertEq(rightSubtreeLeaves[0], 50, "Right leave should be 50");
         console.log("Right subtree leaves:");
@@ -751,8 +751,8 @@ contract SortitionTreeLibTest is Test {
             console.log(rightSubtreeLeaves[i]);
         }
 
-        // Test getSubtreeLeaves for a lower level node (index 4)
-        uint256[] memory lowerLevelLeaves = newTree.getSubtreeLeaves(4);
+        // Test getSubtreeLeafWeights for a lower level node (index 4)
+        uint256[] memory lowerLevelLeaves = newTree.getSubtreeLeafWeights(4);
         assertEq(lowerLevelLeaves.length, 2, "Lower level node should have 2 leaves");
         console.log("Lower level leaves:");
         for (uint256 i = 0; i < lowerLevelLeaves.length; i++) {
