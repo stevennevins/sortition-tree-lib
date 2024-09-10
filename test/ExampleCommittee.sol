@@ -123,6 +123,21 @@ contract Committee {
         return computedHash == storedHash;
     }
 
+    function setCommitteeRoot(
+        uint256 newCommitteeRoot
+    ) external {
+        require(
+            newCommitteeRoot > 0 && newCommitteeRoot < INITIAL_CAPACITY, "Invalid committee root"
+        );
+        uint256 subtreeWeight = tree.getSubtreeWeight(newCommitteeRoot);
+        require(
+            subtreeWeight >= MIN_COMMITTEE_WEIGHT && subtreeWeight <= MAX_COMMITTEE_WEIGHT,
+            "Subtree weight out of bounds"
+        );
+
+        committeeRoot = newCommitteeRoot;
+    }
+
     function selectCommittee(
         bytes32 seed
     ) external {

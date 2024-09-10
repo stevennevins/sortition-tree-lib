@@ -60,4 +60,26 @@ contract ExampleCommitteeTest is Test {
             );
         }
     }
+
+    function testSetCommitteeRoot() public {
+        // Add participants to the committee
+        for (uint256 i = 1; i <= 10; i++) {
+            address signingKey = vm.addr(i);
+            vm.prank(signingKey);
+            committee.addParticipant(20, signingKey);
+        }
+
+        // Set a valid committee root
+        uint256 validRoot = 2; // This should be a valid internal node index
+        committee.setCommitteeRoot(validRoot);
+
+        // Check if the committee root was set correctly
+        assertEq(
+            committee.committeeRoot(), validRoot, "Committee root should be set to the valid value"
+        );
+
+        // Verify the committee weight is within the allowed range
+        uint256 committeeWeight = committee.getCommitteeWeight();
+        assertTrue(committeeWeight == 160, "Committee weight should be within the allowed range");
+    }
 }
