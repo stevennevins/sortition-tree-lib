@@ -85,21 +85,32 @@ contract Committee {
         uint256 leafIndex
     ) internal {
         uint256 nodeIndex = SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndex, INITIAL_CAPACITY);
+
+        // Initialize the current hash with the participant's signing key
         bytes32 currentHash = participantSigningKeyTree[nodeIndex];
 
+        // Traverse up the tree and update parent hashes
         while (nodeIndex > 1) {
-            uint256 siblingIndex = (nodeIndex % 2 == 0) ? nodeIndex + 1 : nodeIndex - 1;
-            bytes32 siblingHash = participantSigningKeyTree[siblingIndex];
+            uint256 parentIndex = nodeIndex / 2;
+            uint256 leftChildIndex = parentIndex * 2;
+            uint256 rightChildIndex = leftChildIndex + 1;
 
-            currentHash = keccak256(
-                abi.encodePacked(
-                    nodeIndex % 2 == 0 ? currentHash : siblingHash,
-                    nodeIndex % 2 == 0 ? siblingHash : currentHash
-                )
-            );
+            bytes32 leftHash = participantSigningKeyTree[leftChildIndex];
+            bytes32 rightHash = participantSigningKeyTree[rightChildIndex];
 
-            nodeIndex = nodeIndex / 2;
-            participantSigningKeyTree[nodeIndex] = currentHash;
+            // Handle missing child hashes
+            if (leftHash == bytes32(0)) {
+                leftHash = bytes32(0);
+            }
+            if (rightHash == bytes32(0)) {
+                rightHash = bytes32(0);
+            }
+
+            // Update the parent hash
+            participantSigningKeyTree[parentIndex] =
+                keccak256(abi.encodePacked(leftHash, rightHash));
+
+            nodeIndex = parentIndex;
         }
     }
 
@@ -110,17 +121,27 @@ contract Committee {
     ) external view returns (bool) {
         require(nodeIndex > 0 && nodeIndex < INITIAL_CAPACITY, "Invalid node index");
 
-        bytes32[] memory recoveredKeys = new bytes32[](signatures.length);
+        // Get the leaf indices under the node
+        uint256[] memory leafIndices = tree.getSubtreeLeafIndexes(nodeIndex);
+        require(
+            signatures.length == leafIndices.length,
+            "Signature count does not match number of leaves"
+        );
+
+        bytes32[] memory expectedKeys = new bytes32[](leafIndices.length);
+        for (uint256 i = 0; i < leafIndices.length; i++) {
+            uint256 leafNodeIndex =
+                SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndices[i], INITIAL_CAPACITY);
+            expectedKeys[i] = participantSigningKeyTree[leafNodeIndex];
+        }
 
         for (uint256 i = 0; i < signatures.length; i++) {
             address recoveredSigner = recoverSigner(message, signatures[i]);
-            recoveredKeys[i] = bytes32(uint256(uint160(recoveredSigner)));
+            bytes32 recoveredKey = bytes32(uint256(uint160(recoveredSigner)));
+            require(recoveredKey == expectedKeys[i], "Recovered signer does not match expected key");
         }
 
-        bytes32 computedHash = computeNodeHash(recoveredKeys);
-        bytes32 storedHash = participantSigningKeyTree[nodeIndex];
-
-        return computedHash == storedHash;
+        return true;
     }
 
     function setCommitteeRoot(
@@ -172,13 +193,11 @@ contract Committee {
     }
 
     function recoverSigner(
-        bytes32 message,
+        bytes32 messageHash,
         bytes memory signature
     ) internal pure returns (address) {
-        bytes32 ethSignedMessageHash =
-            keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", message));
         (bytes32 r, bytes32 s, uint8 v) = splitSignature(signature);
-        return ecrecover(ethSignedMessageHash, v, r, s);
+        return ecrecover(messageHash, v, r, s);
     }
 
     function splitSignature(

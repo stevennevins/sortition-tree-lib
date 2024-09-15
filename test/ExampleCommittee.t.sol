@@ -82,4 +82,30 @@ contract ExampleCommitteeTest is Test {
         uint256 committeeWeight = committee.getCommitteeWeight();
         assertTrue(committeeWeight == 160, "Committee weight should be within the allowed range");
     }
+
+    function testVerifySignaturesFromNode() public {
+        // Add participants to the committee
+        uint256 numParticipants = 4;
+        address[] memory signingKeys = new address[](numParticipants);
+        for (uint256 i = 0; i < numParticipants; i++) {
+            signingKeys[i] = vm.addr(i + 1);
+            vm.prank(signingKeys[i]);
+            committee.addParticipant(20, signingKeys[i]);
+        }
+
+        // Create a message to sign
+        bytes32 message = keccak256("Test message");
+
+        // Create signatures
+        bytes[] memory signatures = new bytes[](numParticipants);
+        for (uint256 i = 0; i < numParticipants; i++) {
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(i + 1, message);
+            signatures[i] = abi.encodePacked(r, s, v);
+        }
+
+        // Verify signatures from the root node (index 1)
+        uint256 rootNodeIndex = 1;
+        bool isValid = committee.verifySignaturesFromNode(rootNodeIndex, message, signatures);
+        assertTrue(isValid, "Signatures should be valid for the root node");
+    }
 }
