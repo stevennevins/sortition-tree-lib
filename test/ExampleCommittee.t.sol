@@ -123,7 +123,7 @@ contract ExampleCommitteeTest is Test {
         committee = new Committee(numParticipants);
 
         address[] memory signingKeys = new address[](numParticipants);
-        
+
         for (uint256 i = 0; i < numParticipants; i++) {
             signingKeys[i] = vm.addr(i + 1);
             vm.prank(signingKeys[i]);
@@ -136,17 +136,14 @@ contract ExampleCommitteeTest is Test {
         uint256 internalNodeIndex = 8;
         uint256 internalNode8Participants = 32;
         bytes[] memory signatures = new bytes[](internalNode8Participants);
-        
+
         for (uint256 i = 0; i < internalNode8Participants; i++) {
             (uint8 v, bytes32 r, bytes32 s) = vm.sign(i + 1, message);
             signatures[i] = abi.encodePacked(r, s, v);
         }
 
         bool isValid = committee.verifySignaturesFromNode(internalNodeIndex, message, signatures);
-        
-        assertTrue(
-            isValid,
-            "Signatures should be valid for internal node 8 in a large committee"
-        );
+
+        assertTrue(isValid, "Signatures should be valid for internal node 8 in a large committee");
     }
 }

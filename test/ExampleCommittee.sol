@@ -18,7 +18,9 @@ contract Committee {
     mapping(uint256 => bytes32) public participantSigningKeyTree;
     mapping(address => uint256) public participantLeafIndices;
 
-    constructor(uint256 initialCapacity) {
+    constructor(
+        uint256 initialCapacity
+    ) {
         require(initialCapacity > 0, "Initial capacity must be greater than zero");
         tree.initialize(initialCapacity);
     }
@@ -30,8 +32,7 @@ contract Committee {
         );
         uint256 leafIndex = tree.add(weight);
 
-        uint256 leafNodeIndex =
-            SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndex, tree.capacity);
+        uint256 leafNodeIndex = SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndex, tree.capacity);
         participantSigningKeyTree[leafNodeIndex] = bytes32(uint256(uint160(signingKey)));
         /// TODO: Handle if they're already added
         participantLeafIndices[msg.sender] = leafIndex;
@@ -149,9 +150,7 @@ contract Committee {
     function setCommitteeRoot(
         uint256 newCommitteeRoot
     ) external {
-        require(
-            newCommitteeRoot > 0 && newCommitteeRoot < tree.capacity, "Invalid committee root"
-        );
+        require(newCommitteeRoot > 0 && newCommitteeRoot < tree.capacity, "Invalid committee root");
         uint256 subtreeWeight = tree.getSubtreeWeight(newCommitteeRoot);
         require(
             subtreeWeight >= MIN_COMMITTEE_WEIGHT && subtreeWeight <= MAX_COMMITTEE_WEIGHT,
