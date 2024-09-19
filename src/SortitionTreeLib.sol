@@ -316,7 +316,10 @@ library SortitionTreeLib {
         return getSubtreeLeafIndexes(tree, parentNodeIndex).length;
     }
 
-    function getSubtreeLeftMostLeafNodeIndex(SortitionTree storage tree, uint256 parentNodeIndex) internal view returns (uint256) {
+    function getSubtreeLeftMostLeafNodeIndex(
+        SortitionTree storage tree,
+        uint256 parentNodeIndex
+    ) internal view returns (uint256) {
         if (isLeafNode(tree, parentNodeIndex)) {
             return parentNodeIndex;
         }
@@ -325,7 +328,7 @@ library SortitionTreeLib {
         uint256 leftChildIndex;
 
         while (!isLeafNode(tree, currentNodeIndex)) {
-            (leftChildIndex, ) = getChildNodes(currentNodeIndex);
+            (leftChildIndex,) = getChildNodes(currentNodeIndex);
             if (leftChildIndex >= tree.capacity + tree.leafCount) {
                 // We've reached the end of the tree, return the last valid node
                 revert("No leaves in subtree");

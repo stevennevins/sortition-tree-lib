@@ -767,6 +767,70 @@ contract SortitionTreeLibTest is Test {
         assertEq(lowerLevelLeaves.length, 2, "Lower level node should have 2 leaves");
     }
 
+    function testGetSubtreeLeaves_2() public {
+        // Initialize a new tree with capacity 8
+        newTree.initialize(16);
+
+        // Add elements with different weights
+        newTree.add(10); // 1
+        newTree.add(20); // 2
+        newTree.add(30); // 3
+        newTree.add(40); // 4
+        newTree.add(50); // 5
+
+        // Test getSubtreeLeafWeights for the root node (index 1)
+        uint256[] memory rootLeaves = newTree.getSubtreeLeafWeights(1);
+        assertEq(rootLeaves.length, 5, "Root should have 5 leaves");
+
+        // Test getSubtreeLeafWeights for the left subtree (index 2)
+        uint256[] memory leftSubtreeLeaves = newTree.getSubtreeLeafWeights(2);
+        assertEq(leftSubtreeLeaves.length, 5, "Left subtree should have 4 leaves");
+
+        // Right subtree should have no leaves
+        vm.expectRevert();
+        newTree.getSubtreeLeafWeights(3);
+
+        // Test getSubtreeLeafWeights for a lower level node (index 4)
+        uint256[] memory lowerLevelLeaves = newTree.getSubtreeLeafWeights(4);
+        assertEq(lowerLevelLeaves.length, 4, "Lower level node should have 2 leaves");
+
+        newTree.add(60); // 6
+        newTree.add(70); // 7
+        newTree.add(80); // 8
+        newTree.add(90); // 9
+        newTree.add(100); // 10
+        newTree.add(110); // 11
+        newTree.add(120); // 12
+        newTree.add(130); // 13
+        newTree.add(140); // 14
+        newTree.add(150); // 15
+        newTree.add(160); // 16
+
+        // Test getSubtreeLeafWeights for the root node (index 1)
+        rootLeaves = newTree.getSubtreeLeafWeights(1);
+        assertEq(rootLeaves.length, 16, "Root should have 16 leaves");
+
+        // Test getSubtreeLeafWeights for the left subtree (index 2)
+        leftSubtreeLeaves = newTree.getSubtreeLeafWeights(2);
+        assertEq(leftSubtreeLeaves.length, 8, "Left subtree should have 8 leaves");
+
+        // Test getSubtreeLeafWeights for the right subtree (index 3)
+        uint256[] memory rightSubtreeLeaves = newTree.getSubtreeLeafWeights(3);
+        assertEq(rightSubtreeLeaves.length, 8, "Right subtree should have 8 leaves");
+
+        // Test getSubtreeLeafWeights for a lower level node in left subtree (index 4)
+        uint256[] memory lowerLeftLeaves = newTree.getSubtreeLeafWeights(4);
+        assertEq(lowerLeftLeaves.length, 4, "Lower left node should have 4 leaves");
+
+        // Test getSubtreeLeafWeights for a lower level node in right subtree (index 5)
+        uint256[] memory lowerRightLeaves = newTree.getSubtreeLeafWeights(5);
+        assertEq(lowerRightLeaves.length, 4, "Lower right node should have 4 leaves");
+
+        // Test getSubtreeLeafWeights for a leaf node (index 8)
+        vm.expectRevert();
+        newTree.getSubtreeLeafWeights(8);
+    }
+
     function testGetPathFromLeafToNode() public {
         newTree.initialize(8);
 
