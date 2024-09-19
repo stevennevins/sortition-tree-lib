@@ -316,38 +316,24 @@ library SortitionTreeLib {
         return getSubtreeLeafIndexes(tree, parentNodeIndex).length;
     }
 
-    function getSubtreeLeafWeights(
-        SortitionTree storage tree,
-        uint256 parentNodeIndex
-    ) internal view returns (uint256[] memory) {
+    function getSubtreeLeftMostLeafNodeIndex(SortitionTree storage tree, uint256 parentNodeIndex) internal view returns (uint256) {
         if (isLeafNode(tree, parentNodeIndex)) {
-            revert ParentNodeIndexIsLeaf();
+            return parentNodeIndex;
         }
 
-        uint256 subtreeDepth = getSubtreeDepth(tree, parentNodeIndex);
-        uint256 maxLeafCount = 2 ** subtreeDepth;
-        uint256 leftmostLeafIndex = parentNodeIndex * 2 ** subtreeDepth;
+        uint256 currentNodeIndex = parentNodeIndex;
+        uint256 leftChildIndex;
 
-        uint256[] memory leaves = new uint256[](maxLeafCount);
-        uint256 actualLeafCount;
-        uint256 leafNodeIndex;
-        for (uint256 i = 0; i < maxLeafCount; i++) {
-            leafNodeIndex = leftmostLeafIndex + i;
-            if (leafNodeIndex >= tree.capacity + tree.leafCount) {
-                break;
+        while (!isLeafNode(tree, currentNodeIndex)) {
+            (leftChildIndex, ) = getChildNodes(currentNodeIndex);
+            if (leftChildIndex >= tree.capacity + tree.leafCount) {
+                // We've reached the end of the tree, return the last valid node
+                revert("No leaves in subtree");
             }
-            if (isLeafNode(tree, leafNodeIndex)) {
-                uint256 leafIndex = nodeArrayIndexToLeafIndex(leafNodeIndex, tree.capacity);
-                leaves[actualLeafCount] = getLeafWeight(tree, leafIndex);
-                actualLeafCount++;
-            }
-        }
-        uint256[] memory filteredLeavesArray = new uint256[](actualLeafCount);
-        for (uint256 i; i < actualLeafCount; i++) {
-            filteredLeavesArray[i] = leaves[i];
+            currentNodeIndex = leftChildIndex;
         }
 
-        return filteredLeavesArray;
+        return currentNodeIndex;
     }
 
     function getSubtreeLeafIndexes(
@@ -358,15 +344,15 @@ library SortitionTreeLib {
             revert ParentNodeIndexIsLeaf();
         }
 
+        uint256 leftmostLeafNodeIndex = getSubtreeLeftMostLeafNodeIndex(tree, parentNodeIndex);
         uint256 subtreeDepth = getSubtreeDepth(tree, parentNodeIndex);
         uint256 maxLeafCount = 2 ** subtreeDepth;
-        uint256 leftmostLeafIndex = parentNodeIndex * 2 ** subtreeDepth;
 
         uint256[] memory leaves = new uint256[](maxLeafCount);
         uint256 actualLeafCount;
-        uint256 leafNodeIndex;
+        uint256 leafNodeIndex = leftmostLeafNodeIndex;
+
         for (uint256 i = 0; i < maxLeafCount; i++) {
-            leafNodeIndex = leftmostLeafIndex + i;
             if (leafNodeIndex >= tree.capacity + tree.leafCount) {
                 break;
             }
@@ -375,13 +361,32 @@ library SortitionTreeLib {
                 leaves[actualLeafCount] = leafIndex;
                 actualLeafCount++;
             }
+            leafNodeIndex++;
         }
-        uint256[] memory filteredLeavesArray = new uint256[](actualLeafCount);
-        for (uint256 i; i < actualLeafCount; i++) {
-            filteredLeavesArray[i] = leaves[i];
+        assembly {
+            // Resize the 'leaves' array in-place
+            mstore(leaves, actualLeafCount)
         }
 
-        return filteredLeavesArray;
+        return leaves;
+    }
+
+    function getSubtreeLeafWeights(
+        SortitionTree storage tree,
+        uint256 parentNodeIndex
+    ) internal view returns (uint256[] memory) {
+        if (isLeafNode(tree, parentNodeIndex)) {
+            revert ParentNodeIndexIsLeaf();
+        }
+
+        uint256[] memory leafIndexes = getSubtreeLeafIndexes(tree, parentNodeIndex);
+        uint256[] memory weights = new uint256[](leafIndexes.length);
+
+        for (uint256 i = 0; i < leafIndexes.length; i++) {
+            weights[i] = getLeafWeight(tree, leafIndexes[i]);
+        }
+
+        return weights;
     }
 
     /// @notice Returns the path from a leaf to a node in its branch to the root
