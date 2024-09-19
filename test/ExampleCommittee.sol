@@ -8,7 +8,6 @@ contract Committee {
     using SortitionTreeLib for SortitionTreeLib.SortitionTree;
 
     SortitionTreeLib.SortitionTree private tree;
-    uint256 private constant INITIAL_CAPACITY = 16;
     uint256 private constant MIN_COMMITTEE_WEIGHT = 100;
     uint256 private constant MAX_COMMITTEE_WEIGHT = 500;
     uint256 private constant MIN_PARTICIPANT_WEIGHT = 10;
@@ -19,8 +18,9 @@ contract Committee {
     mapping(uint256 => bytes32) public participantSigningKeyTree;
     mapping(address => uint256) public participantLeafIndices;
 
-    constructor() {
-        tree.initialize(INITIAL_CAPACITY);
+    constructor(uint256 initialCapacity) {
+        require(initialCapacity > 0, "Initial capacity must be greater than zero");
+        tree.initialize(initialCapacity);
     }
 
     function addParticipant(uint256 weight, address signingKey) external {
@@ -31,7 +31,7 @@ contract Committee {
         uint256 leafIndex = tree.add(weight);
 
         uint256 leafNodeIndex =
-            SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndex, INITIAL_CAPACITY);
+            SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndex, tree.capacity);
         participantSigningKeyTree[leafNodeIndex] = bytes32(uint256(uint160(signingKey)));
         /// TODO: Handle if they're already added
         participantLeafIndices[msg.sender] = leafIndex;
@@ -59,7 +59,7 @@ contract Committee {
         );
 
         uint256 leafNodeIndex =
-            SortitionTreeLib.leafIndexToNodeArrayIndex(participantIndex, INITIAL_CAPACITY);
+            SortitionTreeLib.leafIndexToNodeArrayIndex(participantIndex, tree.capacity);
         participantSigningKeyTree[leafNodeIndex] = bytes32(uint256(uint160(newSigningKey)));
 
         updateAggregateKeyHashes(participantIndex);
@@ -75,7 +75,7 @@ contract Committee {
         require(participantLeafIndices[msg.sender] == participantIndex, "Not the participant");
         tree.remove(participantIndex);
         uint256 participantNodeIndex =
-            SortitionTreeLib.leafIndexToNodeArrayIndex(participantIndex, INITIAL_CAPACITY);
+            SortitionTreeLib.leafIndexToNodeArrayIndex(participantIndex, tree.capacity);
         delete participantSigningKeyTree[participantNodeIndex];
         delete participantLeafIndices[msg.sender];
 
@@ -85,7 +85,7 @@ contract Committee {
     function updateAggregateKeyHashes(
         uint256 leafIndex
     ) internal {
-        uint256 nodeIndex = SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndex, INITIAL_CAPACITY);
+        uint256 nodeIndex = SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndex, tree.capacity);
 
         // Initialize the current hash with the participant's signing key
         bytes32 currentHash = participantSigningKeyTree[nodeIndex];
@@ -120,9 +120,8 @@ contract Committee {
         bytes32 message,
         bytes[] calldata signatures
     ) external view returns (bool) {
-        require(nodeIndex > 0 && nodeIndex < INITIAL_CAPACITY, "Invalid node index");
+        require(nodeIndex > 0 && nodeIndex < tree.capacity, "Invalid node index");
 
-        // Get the leaf indices under the node
         console.log(signatures.length);
         uint256[] memory leafIndices = tree.getSubtreeLeafIndexes(nodeIndex);
         console.log(leafIndices.length);
@@ -134,7 +133,7 @@ contract Committee {
         bytes32[] memory expectedKeys = new bytes32[](leafIndices.length);
         for (uint256 i = 0; i < leafIndices.length; i++) {
             uint256 leafNodeIndex =
-                SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndices[i], INITIAL_CAPACITY);
+                SortitionTreeLib.leafIndexToNodeArrayIndex(leafIndices[i], tree.capacity);
             expectedKeys[i] = participantSigningKeyTree[leafNodeIndex];
         }
 
@@ -151,7 +150,7 @@ contract Committee {
         uint256 newCommitteeRoot
     ) external {
         require(
-            newCommitteeRoot > 0 && newCommitteeRoot < INITIAL_CAPACITY, "Invalid committee root"
+            newCommitteeRoot > 0 && newCommitteeRoot < tree.capacity, "Invalid committee root"
         );
         uint256 subtreeWeight = tree.getSubtreeWeight(newCommitteeRoot);
         require(

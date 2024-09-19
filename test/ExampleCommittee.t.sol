@@ -11,7 +11,7 @@ contract ExampleCommitteeTest is Test {
     Committee internal committee;
 
     function setUp() public {
-        committee = new Committee();
+        committee = new Committee(16);
     }
 
     function testAddParticipant() public {
@@ -116,5 +116,37 @@ contract ExampleCommitteeTest is Test {
         bool isValidInternal =
             committee.verifySignaturesFromNode(internalNodeIndex, message, internalNodeSignatures);
         assertTrue(isValidInternal, "Signatures should be valid for the internal node");
+    }
+
+    function testVerifySignaturesForLargeCommittee() public {
+        uint256 numParticipants = 256;
+        committee = new Committee(numParticipants);
+
+        address[] memory signingKeys = new address[](numParticipants);
+        
+        for (uint256 i = 0; i < numParticipants; i++) {
+            signingKeys[i] = vm.addr(i + 1);
+            vm.prank(signingKeys[i]);
+            committee.addParticipant(20, signingKeys[i]);
+        }
+
+        bytes32 message = keccak256("Large committee test message");
+
+        // Verify signatures from internal node 8
+        uint256 internalNodeIndex = 8;
+        uint256 internalNode8Participants = 32;
+        bytes[] memory signatures = new bytes[](internalNode8Participants);
+        
+        for (uint256 i = 0; i < internalNode8Participants; i++) {
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(i + 1, message);
+            signatures[i] = abi.encodePacked(r, s, v);
+        }
+
+        bool isValid = committee.verifySignaturesFromNode(internalNodeIndex, message, signatures);
+        
+        assertTrue(
+            isValid,
+            "Signatures should be valid for internal node 8 in a large committee"
+        );
     }
 }
