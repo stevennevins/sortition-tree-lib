@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {SortitionTreeLib} from "../src/SortitionTreeLib.sol";
+import {console2 as console} from "forge-std/Test.sol";
 
 contract Committee {
     using SortitionTreeLib for SortitionTreeLib.SortitionTree;
@@ -122,7 +123,9 @@ contract Committee {
         require(nodeIndex > 0 && nodeIndex < INITIAL_CAPACITY, "Invalid node index");
 
         // Get the leaf indices under the node
+        console.log(signatures.length);
         uint256[] memory leafIndices = tree.getSubtreeLeafIndexes(nodeIndex);
+        console.log(leafIndices.length);
         require(
             signatures.length == leafIndices.length,
             "Signature count does not match number of leaves"

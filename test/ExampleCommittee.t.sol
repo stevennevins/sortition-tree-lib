@@ -107,5 +107,14 @@ contract ExampleCommitteeTest is Test {
         uint256 rootNodeIndex = 1;
         bool isValid = committee.verifySignaturesFromNode(rootNodeIndex, message, signatures);
         assertTrue(isValid, "Signatures should be valid for the root node");
+
+        uint256 internalNodeIndex = 8;
+        bytes[] memory internalNodeSignatures = new bytes[](2);
+        internalNodeSignatures[0] = signatures[0];
+        internalNodeSignatures[1] = signatures[1];
+
+        bool isValidInternal =
+            committee.verifySignaturesFromNode(internalNodeIndex, message, internalNodeSignatures);
+        assertTrue(isValidInternal, "Signatures should be valid for the internal node");
     }
 }
